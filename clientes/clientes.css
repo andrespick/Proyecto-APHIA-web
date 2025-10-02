@@ -1,0 +1,117 @@
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #fff;
+}
+
+/* Toda la sección en rojo */
+.clientes {
+  background: #f27272;  /* el mismo rojo de tu captura */
+  min-height: 100vh;
+  padding: 15px;
+}
+
+/* Encabezado */
+.header-clientes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #000;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+}
+
+.header-clientes i {
+  font-size: 28px;
+}
+
+/* Buscador */
+.buscador {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 12px;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.buscador input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+}
+
+.buscador i {
+  color: #555;
+}
+
+.btn-nuevo {
+  background: #fff;
+  border: none;
+  font-weight: bold;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+/* Contenedor con scroll */
+.tabla-container {
+  background: #fff;
+  border-radius: 6px;
+  overflow-y: auto;
+  max-height: 400px; /* altura fija para que aparezca scroll */
+}
+
+/* Tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background: #f27272;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+thead th {
+  padding: 10px;
+  text-align: left;
+}
+
+tbody td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+tbody td i {
+  margin: 0 6px;
+  cursor: pointer;
+  color: #333;
+}
+
+/* Botón volver */
+.btn-volver {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  border: none;
+  background: #2d0c0c;
+  color: #fff;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
