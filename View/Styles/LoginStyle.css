@@ -1,0 +1,104 @@
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f3f4f6; 
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  background: #ffffff;
+  width: 400px;
+  padding: 30px;
+  border-radius: 14px;
+  box-shadow: 0px 8px 20px rgb(170, 167, 167);
+  text-align: center;
+}
+
+.title {
+  margin-bottom: 15px;
+  color: #000000;
+}
+
+.container p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 100px;
+  height: auto;
+  margin-top: 20px;
+}
+
+.username {
+  width: 95%;
+  height: 20px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+.password {
+  width: 95%;
+  height: 20px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+}
+
+button {
+  width: 100%;
+  height: 40px;
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 5px;
+  border: none;
+  outline: none;
+  box-shadow: 0px 4px 4px rgba(253, 0, 0, 0.842);
+  background: #ee0202d8;
+  color: #ffffff;
+  font-size: 16px;
+}   
+
+button:hover {
+  background: #f30404;
+}   
+
+button:active {
+  background: #fa0505;
+}   
+
+images1 {
+  width: 100px;
+  height: auto;
+  margin-top: 20px;
+}
+
+.forgot-password {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.forgot-password a {
+  color: #6a686d;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.forgot-password a:hover {
+  text-decoration: underline;
+}
