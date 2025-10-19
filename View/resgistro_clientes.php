@@ -1,26 +1,22 @@
 <?php
-// Ajusta la ruta según tu estructura
 require_once __DIR__ . '/../Controller/clientesController.php';
-
 $controller = new ClienteController();
 
-// Acción: eliminar (viene por GET)
+// Acción: eliminar
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && !empty($_GET['doc'])) {
     $doc = $_GET['doc'];
-    $ok = $controller->eliminar($doc);
-    // redirigir para evitar re-envío al recargar
+    $controller->eliminar($doc);
     header("Location: resgistro_clientes.php");
     exit;
 }
 
-// Acción: editar -> cargar datos para rellenar el formulario
+// Acción: editar
 $editMode = false;
 $editClient = null;
 if (isset($_GET['action']) && $_GET['action'] === 'edit' && !empty($_GET['doc'])) {
     $doc = $_GET['doc'];
     $editClient = $controller->obtenerPorDocumento($doc);
     if ($editClient) {
-        // separa fullName en nombre y apellido (intento simple)
         $parts = explode(' ', $editClient['fullName'], 2);
         $editClient['nombre'] = $parts[0] ?? '';
         $editClient['apellido'] = $parts[1] ?? '';
@@ -28,10 +24,8 @@ if (isset($_GET['action']) && $_GET['action'] === 'edit' && !empty($_GET['doc'])
     }
 }
 
-// Si se envía formulario (crear o actualizar)
-$message = '';
+// Guardar o actualizar
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // recolectar campos seguros
     $data = [
         'nombre' => $_POST['nombre'] ?? '',
         'apellido' => $_POST['apellido'] ?? '',
@@ -44,19 +38,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ];
 
     if (!empty($_POST['form_action']) && $_POST['form_action'] === 'update') {
-        $res = $controller->actualizar($data);
-        $message = $res['ok'] ? 'Cliente actualizado correctamente' : ('Error: '.$res['msg']);
+        $controller->actualizar($data);
     } else {
-        $res = $controller->guardar($data);
-        $message = $res['ok'] ? 'Cliente creado correctamente' : ('Error: '.$res['msg']);
+        $controller->guardar($data);
     }
-
-    // después de procesar, redirige para limpiar POST y mostrar cambios
     header("Location: resgistro_clientes.php");
     exit;
 }
 
-// Obtener lista actualizada
 $clientes = $controller->index();
 ?>
 <!DOCTYPE html>
@@ -88,28 +77,22 @@ $clientes = $controller->index();
     <!-- MAIN CONTENT -->
     <main class="main-content">
       <div class="contenedor">
-        <div class="header"><div>Registro de Clientes</div><div class="icono"><i class="fa-solid fa-user"></i></div></div>
+        <div class="header">
+          <div>Registro de Clientes</div>
+          <div class="icono"><i class="fa-solid fa-user"></i></div>
+        </div>
 
-        <!-- Mensaje (opcional) -->
-        <?php if (!empty($message)): ?>
-          <div class="mensaje"><?= htmlspecialchars($message) ?></div>
-        <?php endif; ?>
-
-        <!-- Formulario -->
+        <!-- FORMULARIO -->
         <form class="formulario" action="resgistro_clientes.php" method="POST">
-          <!-- indicamos si es update o create -->
           <input type="hidden" name="form_action" value="<?= $editMode ? 'update' : 'create' ?>">
           <div class="campo-grupo">
             <div class="campo">
               <label for="nombre">Nombre:</label>
-              <input type="text" id="nombre" name="nombre" placeholder="Ingrese el nombre" required
-                     value="<?= $editMode ? htmlspecialchars($editClient['nombre']) : '' ?>">
+              <input type="text" id="nombre" name="nombre" required value="<?= $editMode ? htmlspecialchars($editClient['nombre']) : '' ?>">
             </div>
-
             <div class="campo">
               <label for="apellido">Apellido:</label>
-              <input type="text" id="apellido" name="apellido" placeholder="Ingrese el apellido" required
-                     value="<?= $editMode ? htmlspecialchars($editClient['apellido']) : '' ?>">
+              <input type="text" id="apellido" name="apellido" required value="<?= $editMode ? htmlspecialchars($editClient['apellido']) : '' ?>">
             </div>
           </div>
 
@@ -123,36 +106,28 @@ $clientes = $controller->index();
                 <option value="CE" <?= ($editMode && $editClient['documentCategory']=='CE') ? 'selected' : '' ?>>Cédula de Extranjería</option>
               </select>
             </div>
-
             <div class="campo">
               <label for="numero_doc">Número de documento:</label>
-              <input type="text" id="numero_doc" name="numero_doc" placeholder="Ingrese el número" required
-                     value="<?= $editMode ? htmlspecialchars($editClient['documentIdentifier']) : '' ?>"
-                     <?= $editMode ? 'readonly' : '' /* para evitar cambiar PK en edición */ ?>>
+              <input type="text" id="numero_doc" name="numero_doc" required value="<?= $editMode ? htmlspecialchars($editClient['documentIdentifier']) : '' ?>" <?= $editMode ? 'readonly' : '' ?>>
             </div>
           </div>
 
           <div class="campo-grupo">
             <div class="campo">
               <label for="telefono">Teléfono:</label>
-              <input type="text" id="telefono" name="telefono" placeholder="Ingrese el teléfono" required
-                     value="<?= $editMode ? htmlspecialchars($editClient['phoneNumber']) : '' ?>">
+              <input type="text" id="telefono" name="telefono" required value="<?= $editMode ? htmlspecialchars($editClient['phoneNumber']) : '' ?>">
             </div>
-
             <div class="campo">
               <label for="email">Correo electrónico:</label>
-              <input type="email" id="email" name="email" placeholder="Ingrese el correo" required
-                     value="<?= $editMode ? htmlspecialchars($editClient['emailAddress']) : '' ?>">
+              <input type="email" id="email" name="email" required value="<?= $editMode ? htmlspecialchars($editClient['emailAddress']) : '' ?>">
             </div>
           </div>
 
           <div class="campo-grupo">
             <div class="campo">
               <label for="direccion">Dirección:</label>
-              <input type="text" id="direccion" name="direccion" placeholder="Ingrese la dirección" required
-                     value="<?= $editMode ? htmlspecialchars($editClient['address']) : '' ?>">
+              <input type="text" id="direccion" name="direccion" required value="<?= $editMode ? htmlspecialchars($editClient['address']) : '' ?>">
             </div>
-
             <div class="campo">
               <label>Género:</label>
               <div class="radio-group">
@@ -165,14 +140,14 @@ $clientes = $controller->index();
           <div class="botones">
             <button type="submit" class="btn-guardar"><?= $editMode ? 'Actualizar' : 'Guardar' ?></button>
             <?php if ($editMode): ?>
-              <a class="btn-limpiar" href="resgistro_clientes.php" style="display:inline-block;padding:8px 12px;background:#e53935;color:#fff;border-radius:5px;text-decoration:none;margin-left:8px;">Cancelar</a>
+              <a class="btn-limpiar" href="resgistro_clientes.php">Cancelar</a>
             <?php else: ?>
               <button type="reset" class="btn-limpiar">Limpiar</button>
             <?php endif; ?>
           </div>
         </form>
 
-        <!-- Listado -->
+        <!-- LISTADO -->
         <div class="listado">
           <h2>Lista de Clientes</h2>
           <div class="buscador">
@@ -199,12 +174,9 @@ $clientes = $controller->index();
                     <td><?= htmlspecialchars($c['phoneNumber']) ?></td>
                     <td><?= htmlspecialchars($c['emailAddress']) ?></td>
                     <td class="acciones">
-                      <!-- EDIT: apunta a la misma vista con ?action=edit -->
-                      <a href="resgistro_clientes.php?action=edit&doc=<?= urlencode($c['documentIdentifier']) ?>" title="Editar">
+                      <a href="resgistro_clientes.php?action=edit&doc=<?= urlencode($c['documentIdentifier']) ?>" title="Editar" style="color:#7e57c2;">
                         <i class="fa-solid fa-pen-to-square"></i>
                       </a>
-
-                      <!-- DELETE: confirmación y llamada GET -->
                       <a href="resgistro_clientes.php?action=delete&doc=<?= urlencode($c['documentIdentifier']) ?>"
                          onclick="return confirm('¿Eliminar este cliente?');" title="Eliminar" style="margin-left:10px;color:#e53935;">
                         <i class="fa-solid fa-trash"></i>
@@ -218,9 +190,95 @@ $clientes = $controller->index();
             </tbody>
           </table>
         </div>
-
       </div>
     </main>
   </div>
+
+  <!-- FILTRO Y PAGINACIÓN -->
+  <script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const searchInput = document.querySelector(".buscador input");
+    const table = document.querySelector(".listado table");
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    const rowsPerPage = 10;
+    let currentPage = 1;
+
+    const paginationContainer = document.createElement("div");
+    paginationContainer.classList.add("paginacion");
+    paginationContainer.style.textAlign = "center";
+    paginationContainer.style.marginTop = "15px";
+    table.parentElement.appendChild(paginationContainer);
+
+    function renderTable() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      const filteredRows = rows.filter(row =>
+        row.textContent.toLowerCase().includes(searchTerm)
+      );
+
+      const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
+      currentPage = Math.min(currentPage, totalPages) || 1;
+
+      rows.forEach(row => row.style.display = "none");
+      const start = (currentPage - 1) * rowsPerPage;
+      const end = start + rowsPerPage;
+      filteredRows.slice(start, end).forEach(row => {
+        row.style.display = "";
+      });
+
+      renderPagination(totalPages);
+    }
+
+    function renderPagination(totalPages) {
+      paginationContainer.innerHTML = "";
+      if (totalPages <= 1) return;
+
+      const prev = document.createElement("button");
+      prev.textContent = "← Anterior";
+      prev.disabled = currentPage === 1;
+      prev.onclick = () => { currentPage--; renderTable(); };
+      paginationContainer.appendChild(prev);
+
+      for (let i = 1; i <= totalPages; i++) {
+        const btn = document.createElement("button");
+        btn.textContent = i;
+        btn.className = (i === currentPage ? "activo" : "");
+        btn.onclick = () => { currentPage = i; renderTable(); };
+        paginationContainer.appendChild(btn);
+      }
+
+      const next = document.createElement("button");
+      next.textContent = "Siguiente →";
+      next.disabled = currentPage === totalPages;
+      next.onclick = () => { currentPage++; renderTable(); };
+      paginationContainer.appendChild(next);
+    }
+
+    const style = document.createElement("style");
+    style.textContent = `
+      .paginacion button {
+        margin: 0 3px;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #f44336;
+        color: white;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.3s;
+      }
+      .paginacion button:hover:not(:disabled) { background-color: #d32f2f; }
+      .paginacion button:disabled { background-color: #ccc; cursor: not-allowed; }
+      .paginacion button.activo { background-color: #b71c1c; }
+    `;
+    document.head.appendChild(style);
+
+    searchInput.addEventListener("input", function() {
+      currentPage = 1;
+      renderTable();
+    });
+
+    renderTable();
+  });
+  </script>
 </body>
 </html>
