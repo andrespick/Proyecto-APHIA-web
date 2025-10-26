@@ -67,7 +67,7 @@ $clientes = $controller->index();
       <div class="user"><i class="fa-solid fa-user-shield"></i><span>Administrador</span></div>
       <nav class="menu">
         <a href="#"><i class="fas fa-users"></i><span>CLIENTES</span></a>
-        <a href="#"><i class="fas fa-user-tie"></i><span>PROPIETARIOS</span></a>
+        <a href="registro_propietarios.php"><i class="fas fa-user-tie"></i><span>PROPIETARIOS</span></a>
         <a href="#"><i class="fas fa-user-shield"></i><span>CODEUDORES</span></a>
         <a href="#"><i class="fas fa-building"></i><span>INMUEBLES</span></a>
         <a href="#"><i class="fas fa-file-contract"></i><span>CONTRATOS</span></a>
