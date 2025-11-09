@@ -2,8 +2,8 @@
 require_once __DIR__ . '/../Model/conexions.php';
 $conn = (new Conexion())->conectar();
 
-$propertyId = isset($_GET['prop']) ? (int)$_GET['prop'] : 0;
-$docIdentifier = $_GET['doc'] ?? null;
+$propertyId = isset($_POST['prop']) ? (int)$_POST['prop'] : (isset($_GET['prop']) ? (int)$_GET['prop'] : 0);
+$docIdentifier = $_POST['doc'] ?? ($_GET['doc'] ?? null);
 $isProperty = $propertyId > 0;
 
 if (!$isProperty && !$docIdentifier) {
@@ -17,7 +17,7 @@ $allowedReturns = [
     'registro_inmuebles.php'
 ];
 $defaultReturn = $isProperty ? 'registro_inmuebles.php' : 'registro_propietarios.php';
-$returnParam = $_GET['return'] ?? '';
+$returnParam = $_POST['return'] ?? ($_GET['return'] ?? '');
 $returnPage = basename($returnParam);
 if (!in_array($returnPage, $allowedReturns, true)) {
     $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH) ?: '';
@@ -41,16 +41,18 @@ if ($isProperty) {
         die("Inmueble no encontrado.");
     }
 
-    if (isset($_GET['delete']) && $_GET['delete'] !== '') {
-        $filePath = $_GET['delete'];
-        $del = $conn->prepare("DELETE FROM file_record WHERE propertyId=? AND filePath=?");
-        $del->bind_param("is", $propertyId, $filePath);
-        if ($del->execute()) {
-            $rutaAbsoluta = dirname(__DIR__) . '/' . ltrim(str_replace(['../', './'], '', $filePath), '/');
-            if (file_exists($rutaAbsoluta)) {
-                unlink($rutaAbsoluta);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['manage_action'] ?? '') === 'delete') {
+        $filePath = $_POST['filePath'] ?? '';
+        if ($filePath !== '') {
+            $del = $conn->prepare("DELETE FROM file_record WHERE propertyId=? AND filePath=?");
+            $del->bind_param("is", $propertyId, $filePath);
+            if ($del->execute()) {
+                $rutaAbsoluta = dirname(__DIR__) . '/' . ltrim(str_replace(['../', './'], '', $filePath), '/');
+                if (file_exists($rutaAbsoluta)) {
+                    unlink($rutaAbsoluta);
+                }
+                $msg = "Archivo eliminado correctamente.";
             }
-            $msg = "Archivo eliminado correctamente.";
         }
     }
 
@@ -66,16 +68,18 @@ if ($isProperty) {
     $person = $res->fetch_assoc();
     if (!$person) die("Persona no encontrada.");
 
-    if (isset($_GET['delete']) && $_GET['delete'] !== '') {
-        $filePath = $_GET['delete'];
-        $del = $conn->prepare("DELETE FROM file_record WHERE personId=? AND filePath=?");
-        $del->bind_param("is", $person['personId'], $filePath);
-        if ($del->execute()) {
-            $rutaAbsoluta = dirname(__DIR__) . '/' . ltrim(str_replace(['../', './'], '', $filePath), '/');
-            if (file_exists($rutaAbsoluta)) {
-                unlink($rutaAbsoluta);
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['manage_action'] ?? '') === 'delete') {
+        $filePath = $_POST['filePath'] ?? '';
+        if ($filePath !== '') {
+            $del = $conn->prepare("DELETE FROM file_record WHERE personId=? AND filePath=?");
+            $del->bind_param("is", $person['personId'], $filePath);
+            if ($del->execute()) {
+                $rutaAbsoluta = dirname(__DIR__) . '/' . ltrim(str_replace(['../', './'], '', $filePath), '/');
+                if (file_exists($rutaAbsoluta)) {
+                    unlink($rutaAbsoluta);
+                }
+                $msg = "Archivo eliminado correctamente.";
             }
-            $msg = "Archivo eliminado correctamente.";
         }
     }
 
@@ -214,12 +218,22 @@ a.volver:hover {
                 <a href="<?= htmlspecialchars($f['filePath']) ?>" download title="Descargar" style="color:#388e3c;">
                   <i class="fa-solid fa-download"></i>
                 </a>
-                <a href="ver_documentos.php?<?= $isProperty ? 'prop=' . (int)$propertyId : 'doc=' . urlencode($docIdentifier) ?>&return=<?= urlencode($returnPage) ?>&delete=<?= urlencode($f['filePath']) ?>"
-                   onclick="return confirm('¿Eliminar este archivo?');"
-                   title="Eliminar"
-                   style="color:#e53935;">
-                  <i class="fa-solid fa-trash"></i>
-                </a>
+                <form method="POST"
+                      action="ver_documentos.php"
+                      style="display:inline;"
+                      onsubmit="return confirm('¿Eliminar este archivo?');">
+                  <input type="hidden" name="manage_action" value="delete">
+                  <input type="hidden" name="filePath" value="<?= htmlspecialchars($f['filePath']) ?>">
+                  <input type="hidden" name="return" value="<?= htmlspecialchars($returnPage) ?>">
+                  <?php if ($isProperty): ?>
+                    <input type="hidden" name="prop" value="<?= (int)$propertyId ?>">
+                  <?php else: ?>
+                    <input type="hidden" name="doc" value="<?= htmlspecialchars($docIdentifier) ?>">
+                  <?php endif; ?>
+                  <button type="submit" title="Eliminar" style="background:none;border:none;color:#e53935;cursor:pointer;">
+                    <i class="fa-solid fa-trash"></i>
+                  </button>
+                </form>
               </td>
             </tr>
           <?php endforeach; ?>

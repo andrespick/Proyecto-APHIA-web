@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Redirección según categoría
         switch (strtolower($usuario['userCategory'])) {
             case 'system administrator':
-                header("Location: ../View/admin_dashboard.php");
+                header("Location: ../View/gestion_usuarios_sysadmin.php");
                 break;
             case 'administrator':
                 header("Location: ../View/administrator_dashboard.php");

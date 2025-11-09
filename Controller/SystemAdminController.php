@@ -8,6 +8,10 @@ class SystemAdminController {
         $this->model = new SystemAdminModel();
     }
 
+    public function obtenerCategoriasDisponibles() {
+        return $this->model->obtenerCategoriasDisponibles();
+    }
+
     public function index() {
         return $this->model->obtenerTodos();
     }
@@ -17,6 +21,10 @@ class SystemAdminController {
     }
 
     public function crear($data) {
+        if (!$this->model->esCategoriaValida($data['userCategory'] ?? '')) {
+            return ['ok' => false, 'msg' => 'La categoria seleccionada no es valida.'];
+        }
+
         if ($this->model->existeUsername($data['userName'])) {
             return ['ok' => false, 'msg' => 'El nombre de usuario ya está registrado.'];
         }
@@ -33,6 +41,10 @@ class SystemAdminController {
     }
 
     public function actualizar($accountId, $data) {
+        if (!$this->model->esCategoriaValida($data['userCategory'] ?? '')) {
+            return ['ok' => false, 'msg' => 'La categoria seleccionada no es valida.'];
+        }
+
         if ($this->model->existeUsername($data['userName'], $accountId)) {
             return ['ok' => false, 'msg' => 'El nombre de usuario ya está registrado.'];
         }

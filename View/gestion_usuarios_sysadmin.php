@@ -12,6 +12,7 @@ $formData = [
     'documentIdentifier' => '',
     'emailAddress' => '',
     'hashedPassword' => '',
+    'userCategory' => '',
 ];
 
 if (isset($_GET['status'])) {
@@ -29,68 +30,75 @@ if (isset($_GET['status'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $formAction = $_POST['form_action'] ?? 'create';
-
-    if ($formAction === 'create') {
-        $data = [
-            'userName' => trim($_POST['userName'] ?? ''),
-            'documentCategory' => $_POST['documentCategory'] ?? '',
-            'documentIdentifier' => trim($_POST['documentIdentifier'] ?? ''),
-            'emailAddress' => trim($_POST['emailAddress'] ?? ''),
-            'hashedPassword' => $_POST['hashedPassword'] ?? '',
-            'state' => 'ACTIVE',
-        ];
-
-        $resultado = $controller->crear($data);
-        if ($resultado['ok']) {
-            header('Location: gestion_usuarios_sysadmin.php?status=created');
-            exit;
-        } else {
-            $alertMessage = $resultado['msg'];
-            $alertType = 'error';
-            $formData = $data;
-        }
-    } elseif ($formAction === 'update') {
+    $manageAction = $_POST['manage_action'] ?? '';
+    if ($manageAction === 'load_edit') {
         $accountId = (int)($_POST['accountId'] ?? 0);
-        $data = [
-            'userName' => trim($_POST['userName'] ?? ''),
-            'documentCategory' => $_POST['documentCategory'] ?? '',
-            'documentIdentifier' => trim($_POST['documentIdentifier'] ?? ''),
-            'emailAddress' => trim($_POST['emailAddress'] ?? ''),
-            'hashedPassword' => $_POST['hashedPassword'] ?? '',
-        ];
-
-        $resultado = $controller->actualizar($accountId, $data);
-        if ($resultado['ok']) {
-            header('Location: gestion_usuarios_sysadmin.php?status=updated');
-            exit;
-        } else {
-            $alertMessage = $resultado['msg'];
-            $alertType = 'error';
-            $formData = $data;
-            $editMode = true;
+        if ($accountId > 0) {
             $usuarioEditar = $controller->obtenerPorId($accountId);
+            if ($usuarioEditar) {
+                $editMode = true;
+                $formData = [
+                    'userName' => $usuarioEditar['userName'],
+                    'documentCategory' => $usuarioEditar['documentCategory'],
+                    'documentIdentifier' => $usuarioEditar['documentIdentifier'],
+                    'emailAddress' => $usuarioEditar['emailAddress'],
+                    'hashedPassword' => '',
+                    'userCategory' => $usuarioEditar['userCategory'],
+                ];
+            }
         }
-    } elseif ($formAction === 'toggle') {
-        $accountId = (int)($_POST['accountId'] ?? 0);
-        $nuevoEstado = $_POST['state'] ?? 'INACTIVE';
-        $controller->cambiarEstado($accountId, $nuevoEstado);
-        header('Location: gestion_usuarios_sysadmin.php?status=state-changed');
-        exit;
-    }
-}
+    } else {
+        $formAction = $_POST['form_action'] ?? 'create';
 
-if (isset($_GET['action']) && $_GET['action'] === 'edit' && !empty($_GET['id'])) {
-    $usuarioEditar = $controller->obtenerPorId((int)$_GET['id']);
-    if ($usuarioEditar) {
-        $editMode = true;
-        $formData = [
-            'userName' => $usuarioEditar['userName'],
-            'documentCategory' => $usuarioEditar['documentCategory'],
-            'documentIdentifier' => $usuarioEditar['documentIdentifier'],
-            'emailAddress' => $usuarioEditar['emailAddress'],
-            'hashedPassword' => '',
-        ];
+        if ($formAction === 'create') {
+            $data = [
+                'userName' => trim($_POST['userName'] ?? ''),
+                'documentCategory' => $_POST['documentCategory'] ?? '',
+                'documentIdentifier' => trim($_POST['documentIdentifier'] ?? ''),
+                'emailAddress' => trim($_POST['emailAddress'] ?? ''),
+                'hashedPassword' => $_POST['hashedPassword'] ?? '',
+                'state' => 'ACTIVE',
+                'userCategory' => $_POST['userCategory'] ?? '',
+            ];
+
+            $resultado = $controller->crear($data);
+            if ($resultado['ok']) {
+                header('Location: gestion_usuarios_sysadmin.php?status=created');
+                exit;
+            } else {
+                $alertMessage = $resultado['msg'];
+                $alertType = 'error';
+                $formData = $data;
+            }
+        } elseif ($formAction === 'update') {
+            $accountId = (int)($_POST['accountId'] ?? 0);
+            $data = [
+                'userName' => trim($_POST['userName'] ?? ''),
+                'documentCategory' => $_POST['documentCategory'] ?? '',
+                'documentIdentifier' => trim($_POST['documentIdentifier'] ?? ''),
+                'emailAddress' => trim($_POST['emailAddress'] ?? ''),
+                'hashedPassword' => $_POST['hashedPassword'] ?? '',
+                'userCategory' => $_POST['userCategory'] ?? '',
+            ];
+
+            $resultado = $controller->actualizar($accountId, $data);
+            if ($resultado['ok']) {
+                header('Location: gestion_usuarios_sysadmin.php?status=updated');
+                exit;
+            } else {
+                $alertMessage = $resultado['msg'];
+                $alertType = 'error';
+                $formData = $data;
+                $editMode = true;
+                $usuarioEditar = $controller->obtenerPorId($accountId);
+            }
+        } elseif ($formAction === 'toggle') {
+            $accountId = (int)($_POST['accountId'] ?? 0);
+            $nuevoEstado = $_POST['state'] ?? 'INACTIVE';
+            $controller->cambiarEstado($accountId, $nuevoEstado);
+            header('Location: gestion_usuarios_sysadmin.php?status=state-changed');
+            exit;
+        }
     }
 }
 
@@ -101,10 +109,12 @@ if (!$editMode && empty($alertMessage)) {
         'documentIdentifier' => '',
         'emailAddress' => '',
         'hashedPassword' => '',
+        'userCategory' => '',
     ];
 }
 
 $usuarios = $controller->index();
+$categorias = $controller->obtenerCategoriasDisponibles();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -178,6 +188,20 @@ $usuarios = $controller->index();
 
           <div class="campo-grupo">
             <div class="campo">
+              <label for="userCategory">Categor\u00eda de usuario:</label>
+              <select id="userCategory" name="userCategory" required>
+                <option value="">Seleccione</option>
+                <?php foreach ($categorias as $categoria): ?>
+                  <option value="<?= htmlspecialchars($categoria) ?>" <?= (($formData['userCategory'] ?? '') === $categoria) ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($categoria) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+          </div>
+
+          <div class="campo-grupo">
+            <div class="campo">
               <label for="hashedPassword">Contraseña <?= $editMode ? '(dejar en blanco para mantener)' : '' ?>:</label>
               <input type="password" id="hashedPassword" name="hashedPassword" <?= $editMode ? '' : 'required' ?> value="">
             </div>
@@ -210,6 +234,7 @@ $usuarios = $controller->index();
             <thead>
               <tr>
                 <th>Username</th>
+                <th>Categoria</th>
                 <th>Documento</th>
                 <th>Correo</th>
                 <th>Contraseña</th>
@@ -222,6 +247,7 @@ $usuarios = $controller->index();
                 <?php foreach ($usuarios as $usuario): ?>
                   <tr>
                     <td><?= htmlspecialchars($usuario['userName']) ?></td>
+                    <td><?= htmlspecialchars($usuario['userCategory']) ?></td>
                     <td><?= htmlspecialchars($usuario['documentCategory']) ?> <?= htmlspecialchars($usuario['documentIdentifier']) ?></td>
                     <td><?= htmlspecialchars($usuario['emailAddress']) ?></td>
                     <td><?= str_repeat('•', min(10, strlen($usuario['hashedPassword']))) ?></td>
@@ -238,16 +264,20 @@ $usuarios = $controller->index();
                     </td>
                     <td>
                       <div class="table-actions">
-                        <a class="btn-editar" href="gestion_usuarios_sysadmin.php?action=edit&id=<?= (int)$usuario['accountId'] ?>" title="Editar">
-                          <i class="fa-solid fa-pen-to-square"></i>
-                        </a>
+                        <form method="POST" action="gestion_usuarios_sysadmin.php" style="display:inline;">
+                          <input type="hidden" name="manage_action" value="load_edit">
+                          <input type="hidden" name="accountId" value="<?= (int)$usuario['accountId'] ?>">
+                          <button type="submit" class="btn-editar" title="Editar">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                          </button>
+                        </form>
                       </div>
                     </td>
                   </tr>
                 <?php endforeach; ?>
               <?php else: ?>
                 <tr>
-                  <td colspan="6">No hay usuarios registrados.</td>
+                  <td colspan="7">No hay usuarios registrados.</td>
                 </tr>
               <?php endif; ?>
             </tbody>

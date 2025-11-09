@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../Controller/PropertyController.php';
 
 $controller = new PropertyController();
-$propertyId = isset($_GET['prop']) ? (int)$_GET['prop'] : 0;
+$propertyId = isset($_POST['prop']) ? (int)$_POST['prop'] : (isset($_GET['prop']) ? (int)$_GET['prop'] : 0);
 $property = $propertyId ? $controller->obtener($propertyId) : null;
 
 if (!$property) {
@@ -212,7 +212,8 @@ button:hover {
       </div>
     <?php endif; ?>
 
-    <form action="subir_documentos_inmueble.php?prop=<?= (int)$propertyId ?>" method="POST" enctype="multipart/form-data">
+    <form action="subir_documentos_inmueble.php" method="POST" enctype="multipart/form-data">
+      <input type="hidden" name="prop" value="<?= (int)$propertyId ?>">
       <div class="upload-area">
         <i class="fa-solid fa-file-circle-plus"></i>
         <p>Seleccione el archivo (PDF, DOC, XLS, JPG, PNG - máx. 5MB)</p>

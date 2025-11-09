@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../Model/conexions.php';
 $conn = (new Conexion())->conectar();
 
-$doc = $_GET['doc'] ?? null;
+$doc = $_POST['doc'] ?? ($_GET['doc'] ?? null);
 if (!$doc) die("Documento no especificado.");
 
 $allowedReturns = [
@@ -10,7 +10,7 @@ $allowedReturns = [
     'registro_codeudor.php',
     'resgistro_clientes.php'
 ];
-$returnParam = $_GET['return'] ?? '';
+$returnParam = $_POST['return'] ?? ($_GET['return'] ?? '');
 $returnPage = basename($returnParam);
 if (!in_array($returnPage, $allowedReturns, true)) {
     $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH) ?: '';
@@ -212,7 +212,9 @@ a.volver:hover {
       </div>
     <?php endif; ?>
 
-    <form method="POST" enctype="multipart/form-data" action="subir_documentos.php?doc=<?= urlencode($doc) ?>&return=<?= urlencode($returnPage) ?>">
+    <form method="POST" enctype="multipart/form-data" action="subir_documentos.php">
+      <input type="hidden" name="doc" value="<?= htmlspecialchars($doc) ?>">
+      <input type="hidden" name="return" value="<?= htmlspecialchars($returnPage) ?>">
       <div class="upload-area">
         <i class="fa-solid fa-file-arrow-up"></i>
         <p style="margin:0; color:#666;">Seleccione el archivo que desea subir</p>

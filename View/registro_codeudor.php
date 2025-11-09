@@ -1,46 +1,51 @@
 <?php
 require_once __DIR__ . '/../Controller/codeudorController.php';
 $controller = new CodeudorController();
-
-// Acción eliminar
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && !empty($_GET['doc'])) {
-    $controller->eliminar($_GET['doc']);
-    header("Location: registro_codeudor.php");
-    exit;
-}
-
-// Acción editar
 $editMode = false;
 $editCodeudor = null;
-if (isset($_GET['action']) && $_GET['action'] === 'edit' && !empty($_GET['doc'])) {
-    $editCodeudor = $controller->obtenerPorDocumento($_GET['doc']);
-    if ($editCodeudor) {
-        $parts = explode(' ', $editCodeudor['fullName'], 2);
-        $editCodeudor['nombre'] = $parts[0] ?? '';
-        $editCodeudor['apellido'] = $parts[1] ?? '';
-        $editMode = true;
-    }
-}
 
-// Guardar o actualizar
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $data = [
-        'nombre' => $_POST['nombre'] ?? '',
-        'apellido' => $_POST['apellido'] ?? '',
-        'tipo_doc' => $_POST['tipo_doc'] ?? '',
-        'numero_doc' => $_POST['numero_doc'] ?? '',
-        'telefono' => $_POST['telefono'] ?? '',
-        'email' => $_POST['email'] ?? '',
-        'direccion' => $_POST['direccion'] ?? ''
-    ];
+    $manageAction = $_POST['manage_action'] ?? '';
 
-    if (!empty($_POST['form_action']) && $_POST['form_action'] === 'update') {
-        $controller->actualizar($data);
-    } else {
-        $controller->guardar($data);
+    if ($manageAction === 'delete') {
+        $doc = trim($_POST['target_doc'] ?? '');
+        if ($doc !== '') {
+            $controller->eliminar($doc);
+        }
+        header("Location: registro_codeudor.php");
+        exit;
     }
-    header("Location: registro_codeudor.php");
-    exit;
+
+    if ($manageAction === 'load_edit') {
+        $doc = trim($_POST['target_doc'] ?? '');
+        if ($doc !== '') {
+            $editCodeudor = $controller->obtenerPorDocumento($doc);
+            if ($editCodeudor) {
+                $parts = explode(' ', $editCodeudor['fullName'], 2);
+                $editCodeudor['nombre'] = $parts[0] ?? '';
+                $editCodeudor['apellido'] = $parts[1] ?? '';
+                $editMode = true;
+            }
+        }
+    } elseif (!empty($_POST['form_action'])) {
+        $data = [
+            'nombre' => $_POST['nombre'] ?? '',
+            'apellido' => $_POST['apellido'] ?? '',
+            'tipo_doc' => $_POST['tipo_doc'] ?? '',
+            'numero_doc' => $_POST['numero_doc'] ?? '',
+            'telefono' => $_POST['telefono'] ?? '',
+            'email' => $_POST['email'] ?? '',
+            'direccion' => $_POST['direccion'] ?? ''
+        ];
+
+        if ($_POST['form_action'] === 'update') {
+            $controller->actualizar($data);
+        } else {
+            $controller->guardar($data);
+        }
+        header("Location: registro_codeudor.php");
+        exit;
+    }
 }
 
 $codeudores = $controller->index();
@@ -158,10 +163,34 @@ $codeudores = $controller->index();
                 <td><?= htmlspecialchars($c['phoneNumber']) ?></td>
                 <td><?= htmlspecialchars($c['emailAddress']) ?></td>
                 <td class="acciones">
-                  <a href="registro_codeudor.php?action=edit&doc=<?= urlencode($c['documentIdentifier']) ?>" style="color:#7e57c2;"><i class="fa-solid fa-pen-to-square"></i></a>
-                  <a href="registro_codeudor.php?action=delete&doc=<?= urlencode($c['documentIdentifier']) ?>" onclick="return confirm('¿Eliminar este codeudor?');" style="margin-left:10px;color:#e53935;"><i class="fa-solid fa-trash"></i></a>
-                  <a href="subir_documentos.php?doc=<?= urlencode($c['documentIdentifier']) ?>&return=registro_codeudor.php" style="margin-left:10px;color:#388e3c;"><i class="fa-solid fa-file-upload"></i></a>
-                  <a href="ver_documentos.php?doc=<?= urlencode($c['documentIdentifier']) ?>&return=registro_codeudor.php" style="margin-left:10px;color:#1565c0;"><i class="fa-solid fa-file-lines"></i></a>
+                  <form method="POST" action="registro_codeudor.php" style="display:inline;">
+                    <input type="hidden" name="manage_action" value="load_edit">
+                    <input type="hidden" name="target_doc" value="<?= htmlspecialchars($c['documentIdentifier']) ?>">
+                    <button type="submit" title="Editar" style="background:none;border:none;color:#7e57c2;cursor:pointer;">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                  </form>
+                  <form method="POST" action="registro_codeudor.php" style="display:inline;margin-left:10px;" onsubmit="return confirm('¿Eliminar este codeudor?');">
+                    <input type="hidden" name="manage_action" value="delete">
+                    <input type="hidden" name="target_doc" value="<?= htmlspecialchars($c['documentIdentifier']) ?>">
+                    <button type="submit" title="Eliminar" style="background:none;border:none;color:#e53935;cursor:pointer;">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                  <form method="POST" action="subir_documentos.php" style="display:inline;margin-left:10px;">
+                    <input type="hidden" name="doc" value="<?= htmlspecialchars($c['documentIdentifier']) ?>">
+                    <input type="hidden" name="return" value="registro_codeudor.php">
+                    <button type="submit" title="Subir documentos" style="background:none;border:none;color:#388e3c;cursor:pointer;">
+                      <i class="fa-solid fa-file-upload"></i>
+                    </button>
+                  </form>
+                  <form method="POST" action="ver_documentos.php" style="display:inline;margin-left:10px;">
+                    <input type="hidden" name="doc" value="<?= htmlspecialchars($c['documentIdentifier']) ?>">
+                    <input type="hidden" name="return" value="registro_codeudor.php">
+                    <button type="submit" title="Ver documentos" style="background:none;border:none;color:#1565c0;cursor:pointer;">
+                      <i class="fa-solid fa-file-lines"></i>
+                    </button>
+                  </form>
                 </td>
               </tr>
             <?php endforeach; else: ?>

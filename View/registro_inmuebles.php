@@ -1,11 +1,13 @@
 <?php
 require_once __DIR__ . '/../Controller/PropertyController.php';
 $controller = new PropertyController();
+$editMode = false;
+$editProp = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $operation = $_POST['operation'] ?? '';
+    $manageAction = $_POST['manage_action'] ?? '';
 
-    if ($operation === 'delete') {
+    if ($manageAction === 'delete') {
         $propId = isset($_POST['propertyId']) ? (int)$_POST['propertyId'] : 0;
         if ($propId > 0) {
             $controller->eliminar($propId);
@@ -14,7 +16,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    if (!empty($_POST['form_action'])) {
+    if ($manageAction === 'load_edit') {
+        $propId = isset($_POST['propertyId']) ? (int)$_POST['propertyId'] : 0;
+        if ($propId > 0) {
+            $editProp = $controller->obtener($propId);
+            if ($editProp) {
+                $editMode = true;
+            }
+        }
+    } elseif (!empty($_POST['form_action'])) {
         $data = [
             'propertyId' => isset($_POST['propertyId']) ? (int)$_POST['propertyId'] : null,
             'address' => trim($_POST['address'] ?? ''),
@@ -35,20 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header("Location: registro_inmuebles.php");
         exit;
     }
-}
-
-if (isset($_GET['action']) && $_GET['action'] === 'delete' && !empty($_GET['id'])) {
-    $controller->eliminar((int)$_GET['id']);
-    header("Location: registro_inmuebles.php");
-    exit;
-}
-
-// Editar (cargar datos)
-$editMode = false;
-$editProp = null;
-if (isset($_GET['action']) && $_GET['action'] === 'edit' && !empty($_GET['id'])) {
-    $editProp = $controller->obtener((int)$_GET['id']);
-    if ($editProp) $editMode = true;
 }
 
 // Datos para la vista
@@ -201,18 +197,35 @@ $owners = $controller->propietarios();
                 <td><?= htmlspecialchars($i['rentalValue']) ?></td>
                 <td><?= htmlspecialchars($i['ownerName']) ?></td>
                 <td class="acciones">
-                  <a href="registro_inmuebles.php?action=edit&id=<?= (int)$i['propertyId'] ?>" title="Editar" style="color:#7e57c2;"><i class="fa-solid fa-pen-to-square"></i></a>
+                  <form action="registro_inmuebles.php" method="POST" style="display:inline;">
+                    <input type="hidden" name="manage_action" value="load_edit">
+                    <input type="hidden" name="propertyId" value="<?= (int)$i['propertyId'] ?>">
+                    <button type="submit" title="Editar" style="background:none;border:none;padding:0;color:#7e57c2;cursor:pointer;">
+                      <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+                  </form>
                   <form action="registro_inmuebles.php" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este inmueble?');">
-                    <input type="hidden" name="operation" value="delete">
+                    <input type="hidden" name="manage_action" value="delete">
                     <input type="hidden" name="propertyId" value="<?= (int)$i['propertyId'] ?>">
                     <button type="submit" title="Eliminar" style="background:none;border:none;padding:0;margin-left:10px;color:#e53935;cursor:pointer;">
                       <i class="fa-solid fa-trash"></i>
                     </button>
                   </form>
                   <!-- Subir documentos del inmueble -->
-                  <a href="subir_documentos_inmueble.php?prop=<?= (int)$i['propertyId'] ?>" title="Subir documentos" style="margin-left:10px;color:#388e3c;"><i class="fa-solid fa-file-upload"></i></a>
+                  <form action="subir_documentos_inmueble.php" method="POST" style="display:inline;margin-left:10px;">
+                    <input type="hidden" name="prop" value="<?= (int)$i['propertyId'] ?>">
+                    <button type="submit" title="Subir documentos" style="background:none;border:none;color:#388e3c;cursor:pointer;">
+                      <i class="fa-solid fa-file-upload"></i>
+                    </button>
+                  </form>
                   <!-- Ver documentos -->
-                  <a href="ver_documentos.php?prop=<?= (int)$i['propertyId'] ?>&return=registro_inmuebles.php" title="Ver documentos" style="margin-left:10px;color:#1565c0;"><i class="fa-solid fa-file-lines"></i></a>
+                  <form action="ver_documentos.php" method="POST" style="display:inline;margin-left:10px;">
+                    <input type="hidden" name="prop" value="<?= (int)$i['propertyId'] ?>">
+                    <input type="hidden" name="return" value="registro_inmuebles.php">
+                    <button type="submit" title="Ver documentos" style="background:none;border:none;color:#1565c0;cursor:pointer;">
+                      <i class="fa-solid fa-file-lines"></i>
+                    </button>
+                  </form>
                 </td>
               </tr>
             <?php endforeach; else: ?>
