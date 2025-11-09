@@ -1,119 +1,11 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Host: 127.0.0.1
--- Generation Time: Oct 27, 2025 at 04:01 AM
--- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
+SET time_zone = '+00:00';
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+CREATE DATABASE IF NOT EXISTS `aphia_p`;
+USE `aphia_p`;
 
-START TRANSACTION;
-
-SET time_zone = "+00:00";
-
-CREATE DATABASE Aphia_P;
-
-USE Aphia_P;
-
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */
-;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */
-;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */
-;
-/*!40101 SET NAMES utf8mb4 */
-;
-
---
--- Database: `aphia_p`
---
-
--- --------------------------------------------------------
-
---
--- Table structure for table `agreement_co_debtor`
---
-
-CREATE TABLE `agreement_co_debtor` (
-    `agreementId` int(11) NOT NULL,
-    `coDebtorId` int(11) NOT NULL
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `bank_account`
---
-
-CREATE TABLE `bank_account` (
-    `accountId` int(11) NOT NULL,
-    `personId` int(11) NOT NULL,
-    `accountIdentifier` varchar(50) DEFAULT NULL,
-    `accountCategory` varchar(50) DEFAULT NULL COMMENT 'Savings, Checking, etc.',
-    `financialInstitution` varchar(100) DEFAULT NULL
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
---
--- Dumping data for table `bank_account`
---
-
-INSERT INTO
-    `bank_account` (
-        `accountId`,
-        `personId`,
-        `accountIdentifier`,
-        `accountCategory`,
-        `financialInstitution`
-    )
-VALUES (
-        0,
-        0,
-        '111111111111111',
-        'Ahorros',
-        'Bancolombia'
-    );
-
--- --------------------------------------------------------
-
---
--- Table structure for table `file_record`
---
-
-CREATE TABLE `file_record` (
-    `fileId` int(11) NOT NULL,
-    `fileName` varchar(255) DEFAULT NULL,
-    `fileCategory` varchar(255) DEFAULT NULL COMMENT 'Agreement, ID, Deed, etc.',
-    `filePath` varchar(255) DEFAULT NULL COMMENT 'Digital file location',
-    `uploadDate` date DEFAULT NULL,
-    `personId` int(11) DEFAULT NULL,
-    `propertyId` int(11) DEFAULT NULL
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `financial_record`
---
-
-CREATE TABLE `financial_record` (
-    `recordId` int(11) NOT NULL,
-    `recordCategory` varchar(255) DEFAULT NULL COMMENT 'Rent payment, administration fee, property repair, etc.',
-    `amount` decimal(12, 2) DEFAULT NULL,
-    `recordDate` date DEFAULT NULL,
-    `paymentState` varchar(255) DEFAULT NULL COMMENT 'Pending, Overdue, Paid, etc.',
-    `agreementId` int(11) NOT NULL
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `person`
---
-
-CREATE TABLE `person` (
-    `personId` int(11) NOT NULL,
+CREATE TABLE `PERSON` (
+    `personId` int(11) NOT NULL AUTO_INCREMENT,
     `personCategory` varchar(50) DEFAULT NULL COMMENT 'Owner, Tenant, Co-Debtor',
     `fullName` varchar(255) DEFAULT NULL,
     `documentCategory` varchar(10) DEFAULT NULL COMMENT 'ID, TI, CE, PAS, etc.',
@@ -121,26 +13,22 @@ CREATE TABLE `person` (
     `address` varchar(255) DEFAULT NULL,
     `phoneNumber` varchar(50) DEFAULT NULL,
     `phonePrefix` varchar(100) DEFAULT NULL COMMENT 'e.g. +57, +1, +34, etc.',
-    `emailAddress` varchar(255) DEFAULT NULL
+    `emailAddress` varchar(255) DEFAULT NULL,
+    PRIMARY KEY (`personId`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Dumping data for table `person`
---
-
-INSERT INTO
-    `person` (
-        `personId`,
-        `personCategory`,
-        `fullName`,
-        `documentCategory`,
-        `documentIdentifier`,
-        `address`,
-        `phoneNumber`,
-        `phonePrefix`,
-        `emailAddress`
-    )
-VALUES (
+INSERT INTO `PERSON` (
+    `personId`,
+    `personCategory`,
+    `fullName`,
+    `documentCategory`,
+    `documentIdentifier`,
+    `address`,
+    `phoneNumber`,
+    `phonePrefix`,
+    `emailAddress`
+) VALUES
+    (
         0,
         'Owner',
         'andes felipe vela florez',
@@ -482,78 +370,36 @@ VALUES (
         'isabella.gomez@yahoo.com'
     );
 
--- --------------------------------------------------------
-
---
--- Table structure for table `property`
---
-
-CREATE TABLE `property` (
-    `propertyId` int(11) NOT NULL,
-    `address` varchar(255) DEFAULT NULL,
-    `city` varchar(255) DEFAULT NULL,
-    `registrationIdentifier` varchar(255) DEFAULT NULL,
-    `rentalValue` decimal(12, 2) DEFAULT NULL,
-    `utilityContractIdentifiers` varchar(255) DEFAULT NULL COMMENT 'Utility service contract identifiers',
-    `occupancyState` varchar(255) DEFAULT NULL,
-    `propertyType` varchar(50) DEFAULT NULL COMMENT 'Tipo de inmueble: Apartamento, Casa, Oficina, etc.',
-    `ownerId` int(11) NOT NULL
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `property_agreement`
---
-
-CREATE TABLE `property_agreement` (
-    `agreementId` int(11) NOT NULL,
-    `agreementCategory` varchar(50) DEFAULT NULL COMMENT 'Lease, Brokerage, PowerOfAttorney',
-    `agreementContent` longtext DEFAULT NULL COMMENT 'Full agreement content',
-    `startDate` date DEFAULT NULL,
-    `endDate` date DEFAULT NULL,
-    `conditions` text DEFAULT NULL,
-    `propertyId` int(11) DEFAULT NULL,
-    `associatedPersonId` int(11) NOT NULL COMMENT 'Tenant or Owner depending on agreement category'
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user_account`
---
-
-CREATE TABLE `user_account` (
-    `accountId` int(11) NOT NULL,
+CREATE TABLE `USER_ACCOUNT` (
+    `accountId` int(11) NOT NULL AUTO_INCREMENT,
     `userName` varchar(255) DEFAULT NULL,
     `documentCategory` varchar(10) DEFAULT NULL,
     `documentIdentifier` varchar(50) DEFAULT NULL,
     `emailAddress` varchar(255) DEFAULT NULL,
     `hashedPassword` varchar(255) DEFAULT NULL COMMENT 'Hashed password',
-    `userCategory` varchar(50) DEFAULT NULL COMMENT 'Administrator, Staff, Advisor'
+    `state` varchar(20) NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE or INACTIVE',
+    `userCategory` varchar(50) DEFAULT NULL COMMENT 'Administrator, Staff, Advisor',
+    PRIMARY KEY (`accountId`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Dumping data for table `user_account`
---
-
-INSERT INTO
-    `user_account` (
-        `accountId`,
-        `userName`,
-        `documentCategory`,
-        `documentIdentifier`,
-        `emailAddress`,
-        `hashedPassword`,
-        `userCategory`
-    )
-VALUES (
+INSERT INTO `USER_ACCOUNT` (
+    `accountId`,
+    `userName`,
+    `documentCategory`,
+    `documentIdentifier`,
+    `emailAddress`,
+    `hashedPassword`,
+    `state`,
+    `userCategory`
+) VALUES
+    (
         1,
         'testsysadmin',
         'ID',
         '98765432',
         'testadmin@example.com',
         'password123',
+        'ACTIVE',
         'System Administrator'
     ),
     (
@@ -563,6 +409,7 @@ VALUES (
         '98765432',
         'testadmin1@example.com',
         'password124',
+        'ACTIVE',
         'administrator'
     ),
     (
@@ -572,126 +419,98 @@ VALUES (
         '98765432',
         'testadmin@example.com',
         'password123',
+        'ACTIVE',
         'Advisor'
     );
 
---
--- Indexes for dumped tables
---
+CREATE TABLE `PROPERTY` (
+    `propertyId` int(11) NOT NULL AUTO_INCREMENT,
+    `address` varchar(255) DEFAULT NULL,
+    `city` varchar(255) DEFAULT NULL,
+    `registrationIdentifier` varchar(255) DEFAULT NULL,
+    `rentalValue` decimal(12, 2) DEFAULT NULL,
+    `utilityContractIdentifiers` varchar(255) DEFAULT NULL COMMENT 'Utility service contract identifiers',
+    `occupancyState` varchar(255) DEFAULT NULL,
+    `propertyType` varchar(50) DEFAULT NULL COMMENT 'Tipo de inmueble: Apartamento, Casa, Oficina, etc.',
+    `ownerId` int(11) NOT NULL,
+    PRIMARY KEY (`propertyId`),
+    KEY `ownerId` (`ownerId`),
+    CONSTRAINT `PROPERTY_ibfk_1` FOREIGN KEY (`ownerId`) REFERENCES `PERSON` (`personId`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Indexes for table `agreement_co_debtor`
---
-ALTER TABLE `agreement_co_debtor`
-ADD PRIMARY KEY (`agreementId`, `coDebtorId`),
-ADD KEY `coDebtorId` (`coDebtorId`);
+CREATE TABLE `BANK_ACCOUNT` (
+    `accountId` int(11) NOT NULL AUTO_INCREMENT,
+    `personId` int(11) NOT NULL,
+    `accountIdentifier` varchar(50) DEFAULT NULL,
+    `accountCategory` varchar(50) DEFAULT NULL COMMENT 'Savings, Checking, etc.',
+    `financialInstitution` varchar(100) DEFAULT NULL,
+    PRIMARY KEY (`accountId`),
+    KEY `personId` (`personId`),
+    CONSTRAINT `BANK_ACCOUNT_ibfk_1` FOREIGN KEY (`personId`) REFERENCES `PERSON` (`personId`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Indexes for table `bank_account`
---
-ALTER TABLE `bank_account`
-ADD PRIMARY KEY (`accountId`),
-ADD KEY `personId` (`personId`);
+INSERT INTO `BANK_ACCOUNT` (
+    `accountId`,
+    `personId`,
+    `accountIdentifier`,
+    `accountCategory`,
+    `financialInstitution`
+) VALUES (
+    0,
+    0,
+    '111111111111111',
+    'Ahorros',
+    'Bancolombia'
+);
 
---
--- Indexes for table `file_record`
---
-ALTER TABLE `file_record`
-ADD PRIMARY KEY (`fileId`),
-ADD KEY `personId` (`personId`),
-ADD KEY `propertyId` (`propertyId`);
+CREATE TABLE `PROPERTY_AGREEMENT` (
+    `agreementId` int(11) NOT NULL AUTO_INCREMENT,
+    `agreementCategory` varchar(50) DEFAULT NULL COMMENT 'Lease, Brokerage, PowerOfAttorney',
+    `agreementContent` longtext DEFAULT NULL COMMENT 'Full agreement content',
+    `startDate` date DEFAULT NULL,
+    `endDate` date DEFAULT NULL,
+    `conditions` text DEFAULT NULL,
+    `propertyId` int(11) DEFAULT NULL,
+    `associatedPersonId` int(11) NOT NULL COMMENT 'Tenant or Owner depending on agreement category',
+    PRIMARY KEY (`agreementId`),
+    KEY `propertyId` (`propertyId`),
+    KEY `associatedPersonId` (`associatedPersonId`),
+    CONSTRAINT `PROPERTY_AGREEMENT_ibfk_1` FOREIGN KEY (`propertyId`) REFERENCES `PROPERTY` (`propertyId`),
+    CONSTRAINT `PROPERTY_AGREEMENT_ibfk_2` FOREIGN KEY (`associatedPersonId`) REFERENCES `PERSON` (`personId`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Indexes for table `financial_record`
---
-ALTER TABLE `financial_record`
-ADD PRIMARY KEY (`recordId`),
-ADD KEY `agreementId` (`agreementId`);
+CREATE TABLE `AGREEMENT_CO_DEBTOR` (
+    `agreementId` int(11) NOT NULL,
+    `coDebtorId` int(11) NOT NULL,
+    PRIMARY KEY (`agreementId`, `coDebtorId`),
+    KEY `coDebtorId` (`coDebtorId`),
+    CONSTRAINT `AGREEMENT_CO_DEBTOR_ibfk_1` FOREIGN KEY (`agreementId`) REFERENCES `PROPERTY_AGREEMENT` (`agreementId`),
+    CONSTRAINT `AGREEMENT_CO_DEBTOR_ibfk_2` FOREIGN KEY (`coDebtorId`) REFERENCES `PERSON` (`personId`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Indexes for table `person`
---
-ALTER TABLE `person` ADD PRIMARY KEY (`personId`);
+CREATE TABLE `FILE_RECORD` (
+    `fileId` int(11) NOT NULL AUTO_INCREMENT,
+    `fileName` varchar(255) DEFAULT NULL,
+    `fileCategory` varchar(255) DEFAULT NULL COMMENT 'Agreement, ID, Deed, etc.',
+    `filePath` varchar(255) DEFAULT NULL COMMENT 'Digital file location',
+    `uploadDate` date DEFAULT NULL,
+    `personId` int(11) DEFAULT NULL,
+    `propertyId` int(11) DEFAULT NULL,
+    PRIMARY KEY (`fileId`),
+    KEY `personId` (`personId`),
+    KEY `propertyId` (`propertyId`),
+    CONSTRAINT `FILE_RECORD_ibfk_1` FOREIGN KEY (`personId`) REFERENCES `PERSON` (`personId`),
+    CONSTRAINT `FILE_RECORD_ibfk_2` FOREIGN KEY (`propertyId`) REFERENCES `PROPERTY` (`propertyId`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
 
---
--- Indexes for table `property`
---
-ALTER TABLE `property`
-ADD PRIMARY KEY (`propertyId`),
-ADD KEY `ownerId` (`ownerId`);
-
---
--- Indexes for table `property_agreement`
---
-ALTER TABLE `property_agreement`
-ADD PRIMARY KEY (`agreementId`),
-ADD KEY `propertyId` (`propertyId`),
-ADD KEY `associatedPersonId` (`associatedPersonId`);
-
---
--- Indexes for table `user_account`
---
-ALTER TABLE `user_account` ADD PRIMARY KEY (`accountId`);
-
---
--- AUTO_INCREMENT for dumped tables
---
-
---
--- AUTO_INCREMENT for table `file_record`
---
-ALTER TABLE `file_record`
-MODIFY `fileId` int(11) NOT NULL AUTO_INCREMENT,
-AUTO_INCREMENT = 5;
-
---
--- Constraints for dumped tables
---
-
---
--- Constraints for table `agreement_co_debtor`
---
-ALTER TABLE `agreement_co_debtor`
-ADD CONSTRAINT `agreement_co_debtor_ibfk_1` FOREIGN KEY (`agreementId`) REFERENCES `property_agreement` (`agreementId`),
-ADD CONSTRAINT `agreement_co_debtor_ibfk_2` FOREIGN KEY (`coDebtorId`) REFERENCES `person` (`personId`);
-
---
--- Constraints for table `bank_account`
---
-ALTER TABLE `bank_account`
-ADD CONSTRAINT `bank_account_ibfk_1` FOREIGN KEY (`personId`) REFERENCES `person` (`personId`);
-
---
--- Constraints for table `file_record`
---
-ALTER TABLE `file_record`
-ADD CONSTRAINT `file_record_ibfk_1` FOREIGN KEY (`personId`) REFERENCES `person` (`personId`),
-ADD CONSTRAINT `file_record_ibfk_2` FOREIGN KEY (`propertyId`) REFERENCES `property` (`propertyId`);
-
---
--- Constraints for table `financial_record`
---
-ALTER TABLE `financial_record`
-ADD CONSTRAINT `financial_record_ibfk_1` FOREIGN KEY (`agreementId`) REFERENCES `property_agreement` (`agreementId`);
-
---
--- Constraints for table `property`
---
-ALTER TABLE `property`
-ADD CONSTRAINT `property_ibfk_1` FOREIGN KEY (`ownerId`) REFERENCES `person` (`personId`);
-
---
--- Constraints for table `property_agreement`
---
-ALTER TABLE `property_agreement`
-ADD CONSTRAINT `property_agreement_ibfk_1` FOREIGN KEY (`propertyId`) REFERENCES `property` (`propertyId`),
-ADD CONSTRAINT `property_agreement_ibfk_2` FOREIGN KEY (`associatedPersonId`) REFERENCES `person` (`personId`);
-
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */
-;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */
-;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */
-;
+CREATE TABLE `FINANCIAL_RECORD` (
+    `recordId` int(11) NOT NULL AUTO_INCREMENT,
+    `recordCategory` varchar(255) DEFAULT NULL COMMENT 'Rent payment, administration fee, property repair, etc.',
+    `amount` decimal(12, 2) DEFAULT NULL,
+    `recordDate` date DEFAULT NULL,
+    `paymentState` varchar(255) DEFAULT NULL COMMENT 'Pending, Overdue, Paid, etc.',
+    `agreementId` int(11) NOT NULL,
+    PRIMARY KEY (`recordId`),
+    KEY `agreementId` (`agreementId`),
+    CONSTRAINT `FINANCIAL_RECORD_ibfk_1` FOREIGN KEY (`agreementId`) REFERENCES `PROPERTY_AGREEMENT` (`agreementId`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
