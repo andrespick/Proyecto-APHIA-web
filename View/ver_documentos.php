@@ -14,13 +14,23 @@ if (!$isProperty && !$docIdentifier) {
     die("Recurso no especificado.");
 }
 
-$allowedReturns = [
+$adminReturns = [
     'registro_propietarios.php',
     'registro_codeudor.php',
     'resgistro_clientes.php',
     'registro_inmuebles.php'
 ];
-$defaultReturn = $isProperty ? 'registro_inmuebles.php' : 'registro_propietarios.php';
+$advisorReturns = [
+    'advisor_dashboard.php',
+    'advisor_clientes.php',
+    'advisor_codeudores.php',
+    'advisor_propietarios.php',
+    'advisor_inmuebles.php'
+];
+$allowedReturns = array_merge($adminReturns, $advisorReturns);
+$defaultReturn = $isProperty
+    ? ($userCategory === 'advisor' ? 'advisor_inmuebles.php' : 'registro_inmuebles.php')
+    : ($userCategory === 'advisor' ? 'advisor_clientes.php' : 'registro_propietarios.php');
 $returnParam = $_POST['return'] ?? ($_GET['return'] ?? '');
 $returnPage = basename($returnParam);
 if (!in_array($returnPage, $allowedReturns, true)) {
