@@ -1,16 +1,22 @@
 <?php
 require_once '../Model/UsuarioModel.php';
+require_once __DIR__ . '/../Utils/InputValidator.php';
 session_start();
 
 $formOrigin = $_POST['form_origin'] ?? '';
 $redirectBase = ($formOrigin === 'index') ? '../index.php' : '../View/login.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email'] ?? '');
-    $password = trim($_POST['password'] ?? '');
+    $email = InputValidator::sanitizeEmail($_POST['email'] ?? '');
+    $password = InputValidator::sanitizePassword($_POST['password'] ?? '');
 
     if (empty($email) || empty($password)) {
         header("Location: {$redirectBase}?error=campos_vacios");
+        exit;
+    }
+
+    if (!InputValidator::isValidEmail($email)) {
+        header("Location: {$redirectBase}?error=email_invalido");
         exit;
     }
 
