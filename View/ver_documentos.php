@@ -126,7 +126,7 @@ a.volver:hover {
   background: #0d47a1;
 }
 </style>
-<link rel="shortcut icon" href="../img/logo.svg" />
+<link rel="shortcut icon" href="img/logo.svg" />
 </head>
 <body>
   <div class="container">

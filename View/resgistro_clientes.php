@@ -57,7 +57,7 @@ $clientes = $controller->index();
   <link rel="stylesheet" href="Styles/style_administrator_dashboard.css">
   <link rel="stylesheet" href="Styles/registro_cliente.css">
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="shortcut icon" href="../img/logo.svg" />
+  <link rel="shortcut icon" href="img/logo.svg" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>

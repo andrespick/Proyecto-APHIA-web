@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="View/styles/LoginStyle.css">
-  <link rel="shortcut icon" href="img/logo.svg" />
+  <link rel="shortcut icon" href="View/img/logo.svg" />
   <title>Login</title>
 </head>
 
@@ -13,7 +13,7 @@
 
   <!--Caja contenedora login-->
   <div class="container">
-    <img src="img/logo.png" alt="logo" class="logo">
+    <img src="View/img/logo.png" alt="logo" class="logo">
 
 
     <div class="form-container">
@@ -30,7 +30,7 @@
       </form>
     </div>
     <div class="images-box">
-      <img src="/img/logo.png" alt="">
+      <img src="/View/img/logo.png" alt="">
 </body>
 
 </html>
