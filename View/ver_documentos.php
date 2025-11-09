@@ -1,6 +1,10 @@
 <?php
+session_start();
 require_once __DIR__ . '/../Model/conexions.php';
 $conn = (new Conexion())->conectar();
+
+$userCategory = strtolower($_SESSION['usuario']['categoria'] ?? '');
+$canManageDocuments = in_array($userCategory, ['administrator', 'system administrator'], true);
 
 $propertyId = isset($_POST['prop']) ? (int)$_POST['prop'] : (isset($_GET['prop']) ? (int)$_GET['prop'] : 0);
 $docIdentifier = $_POST['doc'] ?? ($_GET['doc'] ?? null);
@@ -41,7 +45,7 @@ if ($isProperty) {
         die("Inmueble no encontrado.");
     }
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['manage_action'] ?? '') === 'delete') {
+    if ($canManageDocuments && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['manage_action'] ?? '') === 'delete') {
         $filePath = $_POST['filePath'] ?? '';
         if ($filePath !== '') {
             $del = $conn->prepare("DELETE FROM file_record WHERE propertyId=? AND filePath=?");
@@ -68,7 +72,7 @@ if ($isProperty) {
     $person = $res->fetch_assoc();
     if (!$person) die("Persona no encontrada.");
 
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['manage_action'] ?? '') === 'delete') {
+    if ($canManageDocuments && $_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['manage_action'] ?? '') === 'delete') {
         $filePath = $_POST['filePath'] ?? '';
         if ($filePath !== '') {
             $del = $conn->prepare("DELETE FROM file_record WHERE personId=? AND filePath=?");
@@ -218,22 +222,24 @@ a.volver:hover {
                 <a href="<?= htmlspecialchars($f['filePath']) ?>" download title="Descargar" style="color:#388e3c;">
                   <i class="fa-solid fa-download"></i>
                 </a>
-                <form method="POST"
-                      action="ver_documentos.php"
-                      style="display:inline;"
-                      onsubmit="return confirm('¿Eliminar este archivo?');">
-                  <input type="hidden" name="manage_action" value="delete">
-                  <input type="hidden" name="filePath" value="<?= htmlspecialchars($f['filePath']) ?>">
-                  <input type="hidden" name="return" value="<?= htmlspecialchars($returnPage) ?>">
-                  <?php if ($isProperty): ?>
-                    <input type="hidden" name="prop" value="<?= (int)$propertyId ?>">
-                  <?php else: ?>
-                    <input type="hidden" name="doc" value="<?= htmlspecialchars($docIdentifier) ?>">
-                  <?php endif; ?>
-                  <button type="submit" title="Eliminar" style="background:none;border:none;color:#e53935;cursor:pointer;">
-                    <i class="fa-solid fa-trash"></i>
-                  </button>
-                </form>
+                <?php if ($canManageDocuments): ?>
+                  <form method="POST"
+                        action="ver_documentos.php"
+                        style="display:inline;"
+                        onsubmit="return confirm('¿Eliminar este archivo?');">
+                    <input type="hidden" name="manage_action" value="delete">
+                    <input type="hidden" name="filePath" value="<?= htmlspecialchars($f['filePath']) ?>">
+                    <input type="hidden" name="return" value="<?= htmlspecialchars($returnPage) ?>">
+                    <?php if ($isProperty): ?>
+                      <input type="hidden" name="prop" value="<?= (int)$propertyId ?>">
+                    <?php else: ?>
+                      <input type="hidden" name="doc" value="<?= htmlspecialchars($docIdentifier) ?>">
+                    <?php endif; ?>
+                    <button type="submit" title="Eliminar" style="background:none;border:none;color:#e53935;cursor:pointer;">
+                      <i class="fa-solid fa-trash"></i>
+                    </button>
+                  </form>
+                <?php endif; ?>
               </td>
             </tr>
           <?php endforeach; ?>
