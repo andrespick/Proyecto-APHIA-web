@@ -188,7 +188,7 @@ $categorias = $controller->obtenerCategoriasDisponibles();
 
           <div class="campo-grupo">
             <div class="campo">
-              <label for="userCategory">Categor\u00eda de usuario:</label>
+              <label for="userCategory">Categoria de usuario:</label>
               <select id="userCategory" name="userCategory" required>
                 <option value="">Seleccione</option>
                 <?php foreach ($categorias as $categoria): ?>

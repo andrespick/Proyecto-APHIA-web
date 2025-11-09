@@ -6,6 +6,7 @@
         case 'email_invalido': echo "El correo electrónico no es válido."; break;
         case 'credenciales_invalidas': echo "Correo o contraseña incorrectos."; break;
         case 'categoria_invalida': echo "Tu categoría de usuario no tiene acceso."; break;
+        case 'usuario_inactivo': echo "Tu usuario no esta activo porfavor comunicate con el administrador de sistemas."; break;
       }
     ?>
   </p>
