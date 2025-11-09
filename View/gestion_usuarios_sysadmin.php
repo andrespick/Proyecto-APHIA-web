@@ -16,7 +16,7 @@ $formData = [
 ];
 
 if (isset($_GET['status'])) {
-    $status = $_GET['status'];
+    $status = filter_input(INPUT_GET, 'status', FILTER_SANITIZE_SPECIAL_CHARS);
     if ($status === 'created') {
         $alertMessage = 'Usuario creado correctamente.';
         $alertType = 'success';
@@ -30,7 +30,7 @@ if (isset($_GET['status'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $manageAction = $_POST['manage_action'] ?? '';
+    $manageAction = trim($_POST['manage_action'] ?? '');
     if ($manageAction === 'load_edit') {
         $accountId = (int)($_POST['accountId'] ?? 0);
         if ($accountId > 0) {
@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     } else {
-        $formAction = $_POST['form_action'] ?? 'create';
+        $formAction = trim($_POST['form_action'] ?? 'create');
 
         if ($formAction === 'create') {
             $data = [
@@ -68,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $alertMessage = $resultado['msg'];
                 $alertType = 'error';
-                $formData = $data;
+                $formData = $resultado['data'] ?? $data;
             }
         } elseif ($formAction === 'update') {
             $accountId = (int)($_POST['accountId'] ?? 0);
@@ -88,16 +88,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 $alertMessage = $resultado['msg'];
                 $alertType = 'error';
-                $formData = $data;
+                $formData = $resultado['data'] ?? $data;
                 $editMode = true;
                 $usuarioEditar = $controller->obtenerPorId($accountId);
             }
         } elseif ($formAction === 'toggle') {
             $accountId = (int)($_POST['accountId'] ?? 0);
             $nuevoEstado = $_POST['state'] ?? 'INACTIVE';
-            $controller->cambiarEstado($accountId, $nuevoEstado);
-            header('Location: gestion_usuarios_sysadmin.php?status=state-changed');
-            exit;
+            $resultado = $controller->cambiarEstado($accountId, $nuevoEstado);
+            if ($resultado['ok']) {
+                header('Location: gestion_usuarios_sysadmin.php?status=state-changed');
+                exit;
+            } else {
+                $alertMessage = $resultado['msg'];
+                $alertType = 'error';
+            }
         }
     }
 }

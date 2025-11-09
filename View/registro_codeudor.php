@@ -1,33 +1,65 @@
 <?php
 require_once __DIR__ . '/../Controller/codeudorController.php';
+
 $controller = new CodeudorController();
+$alertMessage = null;
+$alertType = null;
 $editMode = false;
-$editCodeudor = null;
+$formData = [
+    'nombre' => '',
+    'apellido' => '',
+    'tipo_doc' => '',
+    'numero_doc' => '',
+    'telefono' => '',
+    'email' => '',
+    'direccion' => '',
+];
+
+$status = filter_input(INPUT_GET, 'status', FILTER_SANITIZE_SPECIAL_CHARS);
+if ($status === 'created') {
+    $alertMessage = 'Codeudor registrado correctamente.';
+    $alertType = 'success';
+} elseif ($status === 'updated') {
+    $alertMessage = 'Codeudor actualizado correctamente.';
+    $alertType = 'success';
+} elseif ($status === 'deleted') {
+    $alertMessage = 'Codeudor eliminado correctamente.';
+    $alertType = 'success';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $manageAction = $_POST['manage_action'] ?? '';
+    $manageAction = trim($_POST['manage_action'] ?? '');
 
     if ($manageAction === 'delete') {
-        $doc = trim($_POST['target_doc'] ?? '');
-        if ($doc !== '') {
-            $controller->eliminar($doc);
+        $doc = $_POST['target_doc'] ?? '';
+        $resultado = $controller->eliminar($doc);
+        if ($resultado['ok']) {
+            header('Location: registro_codeudor.php?status=deleted');
+            exit;
         }
-        header("Location: registro_codeudor.php");
-        exit;
-    }
-
-    if ($manageAction === 'load_edit') {
-        $doc = trim($_POST['target_doc'] ?? '');
-        if ($doc !== '') {
-            $editCodeudor = $controller->obtenerPorDocumento($doc);
-            if ($editCodeudor) {
-                $parts = explode(' ', $editCodeudor['fullName'], 2);
-                $editCodeudor['nombre'] = $parts[0] ?? '';
-                $editCodeudor['apellido'] = $parts[1] ?? '';
-                $editMode = true;
-            }
+        $alertMessage = $resultado['msg'];
+        $alertType = 'error';
+    } elseif ($manageAction === 'load_edit') {
+        $doc = $_POST['target_doc'] ?? '';
+        $codeudor = $controller->obtenerPorDocumento($doc);
+        if ($codeudor) {
+            $parts = explode(' ', $codeudor['fullName'], 2);
+            $formData = [
+                'nombre' => $parts[0] ?? '',
+                'apellido' => $parts[1] ?? '',
+                'tipo_doc' => $codeudor['documentCategory'] ?? '',
+                'numero_doc' => $codeudor['documentIdentifier'] ?? '',
+                'telefono' => $codeudor['phoneNumber'] ?? '',
+                'email' => $codeudor['emailAddress'] ?? '',
+                'direccion' => $codeudor['address'] ?? '',
+            ];
+            $editMode = true;
+        } else {
+            $alertMessage = 'No se encontró el codeudor solicitado.';
+            $alertType = 'error';
         }
     } elseif (!empty($_POST['form_action'])) {
+        $formAction = $_POST['form_action'];
         $data = [
             'nombre' => $_POST['nombre'] ?? '',
             'apellido' => $_POST['apellido'] ?? '',
@@ -35,16 +67,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'numero_doc' => $_POST['numero_doc'] ?? '',
             'telefono' => $_POST['telefono'] ?? '',
             'email' => $_POST['email'] ?? '',
-            'direccion' => $_POST['direccion'] ?? ''
+            'direccion' => $_POST['direccion'] ?? '',
         ];
 
-        if ($_POST['form_action'] === 'update') {
-            $controller->actualizar($data);
-        } else {
-            $controller->guardar($data);
+        $resultado = $formAction === 'update'
+            ? $controller->actualizar($data)
+            : $controller->guardar($data);
+
+        if ($resultado['ok']) {
+            $target = $formAction === 'update' ? 'updated' : 'created';
+            header('Location: registro_codeudor.php?status=' . $target);
+            exit;
         }
-        header("Location: registro_codeudor.php");
-        exit;
+
+        $alertMessage = $resultado['msg'];
+        $alertType = 'error';
+        $formData = $resultado['data'] ?? $data;
+        $editMode = ($formAction === 'update');
     }
 }
 
@@ -85,14 +124,20 @@ $codeudores = $controller->index();
       <form class="formulario" action="registro_codeudor.php" method="POST">
         <input type="hidden" name="form_action" value="<?= $editMode ? 'update' : 'create' ?>">
 
+        <?php if (!empty($alertMessage)): ?>
+          <div class="alert <?= $alertType === 'success' ? 'alert-success' : 'alert-error' ?>">
+            <?= htmlspecialchars($alertMessage) ?>
+          </div>
+        <?php endif; ?>
+
         <div class="campo-grupo">
           <div class="campo">
             <label>Nombre:</label>
-            <input type="text" name="nombre" required value="<?= $editMode ? htmlspecialchars($editCodeudor['nombre']) : '' ?>">
+            <input type="text" name="nombre" required value="<?= htmlspecialchars($formData['nombre']) ?>">
           </div>
           <div class="campo">
             <label>Apellido:</label>
-            <input type="text" name="apellido" required value="<?= $editMode ? htmlspecialchars($editCodeudor['apellido']) : '' ?>">
+            <input type="text" name="apellido" required value="<?= htmlspecialchars($formData['apellido']) ?>">
           </div>
         </div>
 
@@ -101,31 +146,31 @@ $codeudores = $controller->index();
             <label>Tipo documento:</label>
             <select name="tipo_doc" required>
               <option value="">Seleccione</option>
-              <option value="CC" <?= ($editMode && $editCodeudor['documentCategory']=='CC') ? 'selected' : '' ?>>Cédula</option>
-              <option value="CE" <?= ($editMode && $editCodeudor['documentCategory']=='CE') ? 'selected' : '' ?>>Cédula de Extranjería</option>
-              <option value="PAS" <?= ($editMode && $editCodeudor['documentCategory']=='PAS') ? 'selected' : '' ?>>Pasaporte</option>
+              <option value="CC" <?= ($formData['tipo_doc'] === 'CC') ? 'selected' : '' ?>>Cédula</option>
+              <option value="CE" <?= ($formData['tipo_doc'] === 'CE') ? 'selected' : '' ?>>Cédula de Extranjería</option>
+              <option value="PAS" <?= ($formData['tipo_doc'] === 'PAS') ? 'selected' : '' ?>>Pasaporte</option>
             </select>
           </div>
           <div class="campo">
             <label>Número documento:</label>
-            <input type="text" name="numero_doc" required value="<?= $editMode ? htmlspecialchars($editCodeudor['documentIdentifier']) : '' ?>" <?= $editMode ? 'readonly' : '' ?>>
+            <input type="text" name="numero_doc" required value="<?= htmlspecialchars($formData['numero_doc']) ?>" <?= $editMode ? 'readonly' : '' ?>>
           </div>
         </div>
 
         <div class="campo-grupo">
           <div class="campo">
             <label>Teléfono:</label>
-            <input type="text" name="telefono" required value="<?= $editMode ? htmlspecialchars($editCodeudor['phoneNumber']) : '' ?>">
+            <input type="text" name="telefono" required value="<?= htmlspecialchars($formData['telefono']) ?>">
           </div>
           <div class="campo">
             <label>Correo:</label>
-            <input type="email" name="email" required value="<?= $editMode ? htmlspecialchars($editCodeudor['emailAddress']) : '' ?>">
+            <input type="email" name="email" required value="<?= htmlspecialchars($formData['email']) ?>">
           </div>
         </div>
 
         <div class="campo">
           <label>Dirección:</label>
-          <input type="text" name="direccion" required value="<?= $editMode ? htmlspecialchars($editCodeudor['address']) : '' ?>">
+          <input type="text" name="direccion" required value="<?= htmlspecialchars($formData['direccion']) ?>">
         </div>
 
         <div class="botones">
@@ -159,7 +204,7 @@ $codeudores = $controller->index();
             <?php if (!empty($codeudores)): foreach ($codeudores as $c): ?>
               <tr>
                 <td><?= htmlspecialchars($c['fullName']) ?></td>
-                <td><?= htmlspecialchars($c['documentCategory']).' '.htmlspecialchars($c['documentIdentifier']) ?></td>
+                <td><?= htmlspecialchars($c['documentCategory']) . ' ' . htmlspecialchars($c['documentIdentifier']) ?></td>
                 <td><?= htmlspecialchars($c['phoneNumber']) ?></td>
                 <td><?= htmlspecialchars($c['emailAddress']) ?></td>
                 <td class="acciones">
@@ -199,10 +244,26 @@ $codeudores = $controller->index();
           </tbody>
         </table>
       </div>
-
     </div>
   </main>
 </div>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.querySelector('.buscador input');
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
+
+    searchInput.addEventListener('input', function () {
+      const term = (this.value || '').toLowerCase().trim();
+      let visible = 0;
+      rows.forEach(row => {
+        const match = row.textContent.toLowerCase().includes(term);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      document.querySelector('.listado table').classList.toggle('sin-resultados', visible === 0);
+    });
+  });
+</script>
 </body>
 </html>

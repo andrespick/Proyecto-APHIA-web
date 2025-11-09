@@ -1,53 +1,97 @@
 <?php
 require_once __DIR__ . '/../Controller/PropertyController.php';
+
 $controller = new PropertyController();
+$alertMessage = null;
+$alertType = null;
 $editMode = false;
-$editProp = null;
+$formData = [
+    'propertyId' => null,
+    'address' => '',
+    'city' => '',
+    'registrationIdentifier' => '',
+    'rentalValue' => '',
+    'utilityContractIdentifiers' => '',
+    'occupancyState' => '',
+    'propertyType' => '',
+    'ownerId' => '',
+];
+
+$status = filter_input(INPUT_GET, 'status', FILTER_SANITIZE_SPECIAL_CHARS);
+if ($status === 'created') {
+    $alertMessage = 'Inmueble registrado correctamente.';
+    $alertType = 'success';
+} elseif ($status === 'updated') {
+    $alertMessage = 'Inmueble actualizado correctamente.';
+    $alertType = 'success';
+} elseif ($status === 'deleted') {
+    $alertMessage = 'Inmueble eliminado correctamente.';
+    $alertType = 'success';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $manageAction = $_POST['manage_action'] ?? '';
+    $manageAction = trim($_POST['manage_action'] ?? '');
 
     if ($manageAction === 'delete') {
         $propId = isset($_POST['propertyId']) ? (int)$_POST['propertyId'] : 0;
-        if ($propId > 0) {
-            $controller->eliminar($propId);
+        $resultado = $controller->eliminar($propId);
+        if ($resultado['ok']) {
+            header('Location: registro_inmuebles.php?status=deleted');
+            exit;
         }
-        header("Location: registro_inmuebles.php");
-        exit;
-    }
-
-    if ($manageAction === 'load_edit') {
+        $alertMessage = $resultado['msg'];
+        $alertType = 'error';
+    } elseif ($manageAction === 'load_edit') {
         $propId = isset($_POST['propertyId']) ? (int)$_POST['propertyId'] : 0;
-        if ($propId > 0) {
-            $editProp = $controller->obtener($propId);
-            if ($editProp) {
-                $editMode = true;
-            }
+        $inmueble = $controller->obtener($propId);
+        if ($inmueble) {
+            $formData = [
+                'propertyId' => (int)$inmueble['propertyId'],
+                'address' => $inmueble['address'] ?? '',
+                'city' => $inmueble['city'] ?? '',
+                'registrationIdentifier' => $inmueble['registrationIdentifier'] ?? '',
+                'rentalValue' => $inmueble['rentalValue'] ?? '',
+                'utilityContractIdentifiers' => $inmueble['utilityContractIdentifiers'] ?? '',
+                'occupancyState' => $inmueble['occupancyState'] ?? '',
+                'propertyType' => $inmueble['propertyType'] ?? '',
+                'ownerId' => (int)($inmueble['ownerId'] ?? 0),
+            ];
+            $editMode = true;
+        } else {
+            $alertMessage = 'No se encontró el inmueble solicitado.';
+            $alertType = 'error';
         }
     } elseif (!empty($_POST['form_action'])) {
+        $formAction = $_POST['form_action'];
         $data = [
             'propertyId' => isset($_POST['propertyId']) ? (int)$_POST['propertyId'] : null,
-            'address' => trim($_POST['address'] ?? ''),
-            'city' => trim($_POST['city'] ?? ''),
-            'registrationIdentifier' => trim($_POST['registrationIdentifier'] ?? ''),
-            'rentalValue' => trim($_POST['rentalValue'] ?? ''),
-            'utilityContractIdentifiers' => trim($_POST['utilityContractIdentifiers'] ?? ''),
-            'occupancyState' => trim($_POST['occupancyState'] ?? ''),
-            'propertyType' => trim($_POST['propertyType'] ?? ''),
+            'address' => $_POST['address'] ?? '',
+            'city' => $_POST['city'] ?? '',
+            'registrationIdentifier' => $_POST['registrationIdentifier'] ?? '',
+            'rentalValue' => $_POST['rentalValue'] ?? '',
+            'utilityContractIdentifiers' => $_POST['utilityContractIdentifiers'] ?? '',
+            'occupancyState' => $_POST['occupancyState'] ?? '',
+            'propertyType' => $_POST['propertyType'] ?? '',
             'ownerId' => isset($_POST['ownerId']) ? (int)$_POST['ownerId'] : 0,
         ];
 
-        if ($_POST['form_action'] === 'update') {
-            $controller->actualizar($data);
-        } else {
-            $controller->crear($data);
+        $resultado = $formAction === 'update'
+            ? $controller->actualizar($data)
+            : $controller->crear($data);
+
+        if ($resultado['ok']) {
+            $target = $formAction === 'update' ? 'updated' : 'created';
+            header('Location: registro_inmuebles.php?status=' . $target);
+            exit;
         }
-        header("Location: registro_inmuebles.php");
-        exit;
+
+        $alertMessage = $resultado['msg'];
+        $alertType = 'error';
+        $formData = $resultado['data'] ?? $data;
+        $editMode = ($formAction === 'update');
     }
 }
 
-// Datos para la vista
 $inmuebles = $controller->index();
 $owners = $controller->propietarios();
 ?>
@@ -87,44 +131,50 @@ $owners = $controller->propietarios();
       <!-- FORM -->
       <form class="formulario" action="registro_inmuebles.php" method="POST">
         <input type="hidden" name="form_action" value="<?= $editMode ? 'update' : 'create' ?>">
-        <?php if ($editMode): ?>
-          <input type="hidden" name="propertyId" value="<?= (int)$editProp['propertyId'] ?>">
+        <?php if ($editMode && !empty($formData['propertyId'])): ?>
+          <input type="hidden" name="propertyId" value="<?= (int)$formData['propertyId'] ?>">
+        <?php endif; ?>
+
+        <?php if (!empty($alertMessage)): ?>
+          <div class="alert <?= $alertType === 'success' ? 'alert-success' : 'alert-error' ?>">
+            <?= htmlspecialchars($alertMessage) ?>
+          </div>
         <?php endif; ?>
 
         <div class="campo-grupo">
           <div class="campo">
             <label for="address">Dirección:</label>
-            <input type="text" id="address" name="address" required value="<?= $editMode ? htmlspecialchars($editProp['address']) : '' ?>">
+            <input type="text" id="address" name="address" required value="<?= htmlspecialchars($formData['address']) ?>">
           </div>
           <div class="campo">
             <label for="city">Ciudad:</label>
-            <input type="text" id="city" name="city" required value="<?= $editMode ? htmlspecialchars($editProp['city']) : '' ?>">
+            <input type="text" id="city" name="city" required value="<?= htmlspecialchars($formData['city']) ?>">
           </div>
         </div>
 
         <div class="campo-grupo">
           <div class="campo">
             <label for="registrationIdentifier">Matrícula / Registro:</label>
-            <input type="text" id="registrationIdentifier" name="registrationIdentifier" value="<?= $editMode ? htmlspecialchars($editProp['registrationIdentifier']) : '' ?>">
+            <input type="text" id="registrationIdentifier" name="registrationIdentifier" value="<?= htmlspecialchars($formData['registrationIdentifier']) ?>">
           </div>
           <div class="campo">
             <label for="rentalValue">Canon de arriendo:</label>
-            <input type="number" step="0.01" id="rentalValue" name="rentalValue" value="<?= $editMode ? htmlspecialchars($editProp['rentalValue']) : '' ?>">
+            <input type="number" step="0.01" id="rentalValue" name="rentalValue" value="<?= htmlspecialchars($formData['rentalValue']) ?>">
           </div>
         </div>
 
         <div class="campo-grupo">
           <div class="campo">
             <label for="utilityContractIdentifiers">Contratos de servicios:</label>
-            <input type="text" id="utilityContractIdentifiers" name="utilityContractIdentifiers" placeholder="Gas:..., Energía:..., Agua:..." value="<?= $editMode ? htmlspecialchars($editProp['utilityContractIdentifiers']) : '' ?>">
+            <input type="text" id="utilityContractIdentifiers" name="utilityContractIdentifiers" placeholder="Gas:..., Energía:..., Agua:..." value="<?= htmlspecialchars($formData['utilityContractIdentifiers']) ?>">
           </div>
           <div class="campo">
             <label for="occupancyState">Estado ocupación:</label>
             <select id="occupancyState" name="occupancyState">
               <option value="">Seleccione</option>
-              <option value="Disponible" <?= ($editMode && $editProp['occupancyState']=='Disponible') ? 'selected' : '' ?>>Disponible</option>
-              <option value="Ocupado" <?= ($editMode && $editProp['occupancyState']=='Ocupado') ? 'selected' : '' ?>>Ocupado</option>
-              <option value="Mantenimiento" <?= ($editMode && $editProp['occupancyState']=='Mantenimiento') ? 'selected' : '' ?>>Mantenimiento</option>
+              <option value="Disponible" <?= ($formData['occupancyState'] === 'Disponible') ? 'selected' : '' ?>>Disponible</option>
+              <option value="Ocupado" <?= ($formData['occupancyState'] === 'Ocupado') ? 'selected' : '' ?>>Ocupado</option>
+              <option value="Mantenimiento" <?= ($formData['occupancyState'] === 'Mantenimiento') ? 'selected' : '' ?>>Mantenimiento</option>
             </select>
           </div>
         </div>
@@ -134,12 +184,12 @@ $owners = $controller->propietarios();
             <label for="propertyType">Tipo de inmueble:</label>
             <select id="propertyType" name="propertyType" required>
               <option value="">Seleccione</option>
-              <option value="Apartamento" <?= ($editMode && $editProp['propertyType']=='Apartamento') ? 'selected' : '' ?>>Apartamento</option>
-              <option value="Casa" <?= ($editMode && $editProp['propertyType']=='Casa') ? 'selected' : '' ?>>Casa</option>
-              <option value="Oficina" <?= ($editMode && $editProp['propertyType']=='Oficina') ? 'selected' : '' ?>>Oficina</option>
-              <option value="Local" <?= ($editMode && $editProp['propertyType']=='Local') ? 'selected' : '' ?>>Local</option>
-              <option value="Bodega" <?= ($editMode && $editProp['propertyType']=='Bodega') ? 'selected' : '' ?>>Bodega</option>
-              <option value="Otro" <?= ($editMode && $editProp['propertyType']=='Otro') ? 'selected' : '' ?>>Otro</option>
+              <option value="Apartamento" <?= ($formData['propertyType'] === 'Apartamento') ? 'selected' : '' ?>>Apartamento</option>
+              <option value="Casa" <?= ($formData['propertyType'] === 'Casa') ? 'selected' : '' ?>>Casa</option>
+              <option value="Oficina" <?= ($formData['propertyType'] === 'Oficina') ? 'selected' : '' ?>>Oficina</option>
+              <option value="Local" <?= ($formData['propertyType'] === 'Local') ? 'selected' : '' ?>>Local</option>
+              <option value="Bodega" <?= ($formData['propertyType'] === 'Bodega') ? 'selected' : '' ?>>Bodega</option>
+              <option value="Otro" <?= ($formData['propertyType'] === 'Otro') ? 'selected' : '' ?>>Otro</option>
             </select>
           </div>
 
@@ -148,8 +198,7 @@ $owners = $controller->propietarios();
             <select id="ownerId" name="ownerId" required>
               <option value="">Seleccione propietario</option>
               <?php foreach ($owners as $o): ?>
-                <option value="<?= (int)$o['personId'] ?>" 
-                  <?= ($editMode && (int)$editProp['ownerId']===(int)$o['personId']) ? 'selected' : '' ?>>
+                <option value="<?= (int)$o['personId'] ?>" <?= ((int)$formData['ownerId'] === (int)$o['personId']) ? 'selected' : '' ?>>
                   <?= htmlspecialchars($o['fullName']) ?> (<?= htmlspecialchars($o['documentIdentifier']) ?>)
                 </option>
               <?php endforeach; ?>
@@ -200,30 +249,15 @@ $owners = $controller->propietarios();
                   <form action="registro_inmuebles.php" method="POST" style="display:inline;">
                     <input type="hidden" name="manage_action" value="load_edit">
                     <input type="hidden" name="propertyId" value="<?= (int)$i['propertyId'] ?>">
-                    <button type="submit" title="Editar" style="background:none;border:none;padding:0;color:#7e57c2;cursor:pointer;">
+                    <button type="submit" title="Editar" style="background:none;border:none;color:#7e57c2;cursor:pointer;">
                       <i class="fa-solid fa-pen-to-square"></i>
                     </button>
                   </form>
-                  <form action="registro_inmuebles.php" method="POST" style="display:inline;" onsubmit="return confirm('¿Eliminar este inmueble?');">
+                  <form action="registro_inmuebles.php" method="POST" style="display:inline;margin-left:10px;" onsubmit="return confirm('¿Eliminar este inmueble?');">
                     <input type="hidden" name="manage_action" value="delete">
                     <input type="hidden" name="propertyId" value="<?= (int)$i['propertyId'] ?>">
-                    <button type="submit" title="Eliminar" style="background:none;border:none;padding:0;margin-left:10px;color:#e53935;cursor:pointer;">
+                    <button type="submit" title="Eliminar" style="background:none;border:none;color:#e53935;cursor:pointer;">
                       <i class="fa-solid fa-trash"></i>
-                    </button>
-                  </form>
-                  <!-- Subir documentos del inmueble -->
-                  <form action="subir_documentos_inmueble.php" method="POST" style="display:inline;margin-left:10px;">
-                    <input type="hidden" name="prop" value="<?= (int)$i['propertyId'] ?>">
-                    <button type="submit" title="Subir documentos" style="background:none;border:none;color:#388e3c;cursor:pointer;">
-                      <i class="fa-solid fa-file-upload"></i>
-                    </button>
-                  </form>
-                  <!-- Ver documentos -->
-                  <form action="ver_documentos.php" method="POST" style="display:inline;margin-left:10px;">
-                    <input type="hidden" name="prop" value="<?= (int)$i['propertyId'] ?>">
-                    <input type="hidden" name="return" value="registro_inmuebles.php">
-                    <button type="submit" title="Ver documentos" style="background:none;border:none;color:#1565c0;cursor:pointer;">
-                      <i class="fa-solid fa-file-lines"></i>
                     </button>
                   </form>
                 </td>
@@ -238,61 +272,22 @@ $owners = $controller->propietarios();
   </main>
 </div>
 
-<!-- Buscador + paginación + visor de documentos -->
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-  // Filtro + paginación
-  const searchInput = document.querySelector(".buscador input");
-  const table = document.querySelector(".listado table");
-  const rows = Array.from(table.querySelectorAll("tbody tr"));
-  const rowsPerPage = 10;
-  let currentPage = 1;
+  document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.querySelector('.buscador input');
+    const rows = Array.from(document.querySelectorAll('tbody tr'));
 
-  const paginationContainer = document.createElement("div");
-  paginationContainer.classList.add("paginacion");
-  paginationContainer.style.textAlign = "center";
-  paginationContainer.style.marginTop = "15px";
-  table.parentElement.appendChild(paginationContainer);
-
-  function renderTable() {
-    const term = (searchInput.value || "").toLowerCase().trim();
-    const filtered = rows.filter(r => r.textContent.toLowerCase().includes(term));
-    const totalPages = Math.ceil(filtered.length / rowsPerPage) || 1;
-    currentPage = Math.min(currentPage, totalPages) || 1;
-
-    rows.forEach(r => r.style.display = "none");
-    const start = (currentPage - 1) * rowsPerPage;
-    filtered.slice(start, start + rowsPerPage).forEach(r => r.style.display = "");
-
-    renderPagination(totalPages);
-  }
-  function renderPagination(totalPages) {
-    paginationContainer.innerHTML = "";
-    if (totalPages <= 1) return;
-
-    const prev = document.createElement("button");
-    prev.textContent = "← Anterior";
-    prev.disabled = (currentPage === 1);
-    prev.onclick = () => { currentPage--; renderTable(); };
-    paginationContainer.appendChild(prev);
-
-    for (let i=1; i<=totalPages; i++) {
-      const b = document.createElement("button");
-      b.textContent = i;
-      b.className = (i === currentPage ? "activo" : "");
-      b.onclick = () => { currentPage = i; renderTable(); };
-      paginationContainer.appendChild(b);
-    }
-
-    const next = document.createElement("button");
-    next.textContent = "Siguiente →";
-    next.disabled = (currentPage === totalPages);
-    next.onclick = () => { currentPage++; renderTable(); };
-    paginationContainer.appendChild(next);
-  }
-  searchInput.addEventListener("input", () => { currentPage = 1; renderTable(); });
-  renderTable();
-});
+    searchInput.addEventListener('input', function () {
+      const term = (this.value || '').toLowerCase().trim();
+      let visible = 0;
+      rows.forEach(row => {
+        const match = row.textContent.toLowerCase().includes(term);
+        row.style.display = match ? '' : 'none';
+        if (match) visible++;
+      });
+      document.querySelector('.listado table').classList.toggle('sin-resultados', visible === 0);
+    });
+  });
 </script>
 </body>
 </html>

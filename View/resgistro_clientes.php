@@ -1,33 +1,67 @@
 <?php
 require_once __DIR__ . '/../Controller/clientesController.php';
+
 $controller = new ClienteController();
+$alertMessage = null;
+$alertType = null;
 $editMode = false;
-$editClient = null;
+$formData = [
+    'nombre' => '',
+    'apellido' => '',
+    'tipo_doc' => '',
+    'numero_doc' => '',
+    'telefono' => '',
+    'email' => '',
+    'direccion' => '',
+    'genero' => '',
+];
+
+$status = filter_input(INPUT_GET, 'status', FILTER_SANITIZE_SPECIAL_CHARS);
+if ($status === 'created') {
+    $alertMessage = 'Cliente registrado correctamente.';
+    $alertType = 'success';
+} elseif ($status === 'updated') {
+    $alertMessage = 'Cliente actualizado correctamente.';
+    $alertType = 'success';
+} elseif ($status === 'deleted') {
+    $alertMessage = 'Cliente eliminado correctamente.';
+    $alertType = 'success';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $manageAction = $_POST['manage_action'] ?? '';
+    $manageAction = trim($_POST['manage_action'] ?? '');
 
     if ($manageAction === 'delete') {
-        $doc = trim($_POST['target_doc'] ?? '');
-        if ($doc !== '') {
-            $controller->eliminar($doc);
+        $doc = $_POST['target_doc'] ?? '';
+        $resultado = $controller->eliminar($doc);
+        if ($resultado['ok']) {
+            header('Location: resgistro_clientes.php?status=deleted');
+            exit;
         }
-        header("Location: resgistro_clientes.php");
-        exit;
-    }
-
-    if ($manageAction === 'load_edit') {
-        $doc = trim($_POST['target_doc'] ?? '');
-        if ($doc !== '') {
-            $editClient = $controller->obtenerPorDocumento($doc);
-            if ($editClient) {
-                $parts = explode(' ', $editClient['fullName'], 2);
-                $editClient['nombre'] = $parts[0] ?? '';
-                $editClient['apellido'] = $parts[1] ?? '';
-                $editMode = true;
-            }
+        $alertMessage = $resultado['msg'];
+        $alertType = 'error';
+    } elseif ($manageAction === 'load_edit') {
+        $doc = $_POST['target_doc'] ?? '';
+        $cliente = $controller->obtenerPorDocumento($doc);
+        if ($cliente) {
+            $parts = explode(' ', $cliente['fullName'], 2);
+            $formData = [
+                'nombre' => $parts[0] ?? '',
+                'apellido' => $parts[1] ?? '',
+                'tipo_doc' => $cliente['documentCategory'] ?? '',
+                'numero_doc' => $cliente['documentIdentifier'] ?? '',
+                'telefono' => $cliente['phoneNumber'] ?? '',
+                'email' => $cliente['emailAddress'] ?? '',
+                'direccion' => $cliente['address'] ?? '',
+                'genero' => $cliente['gender'] ?? '',
+            ];
+            $editMode = true;
+        } else {
+            $alertMessage = 'No se encontró el cliente solicitado.';
+            $alertType = 'error';
         }
     } elseif (!empty($_POST['form_action'])) {
+        $formAction = $_POST['form_action'];
         $data = [
             'nombre' => $_POST['nombre'] ?? '',
             'apellido' => $_POST['apellido'] ?? '',
@@ -36,16 +70,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'telefono' => $_POST['telefono'] ?? '',
             'email' => $_POST['email'] ?? '',
             'direccion' => $_POST['direccion'] ?? '',
-            'genero' => $_POST['genero'] ?? ''
+            'genero' => $_POST['genero'] ?? '',
         ];
 
-        if ($_POST['form_action'] === 'update') {
-            $controller->actualizar($data);
-        } else {
-            $controller->guardar($data);
+        $resultado = $formAction === 'update'
+            ? $controller->actualizar($data)
+            : $controller->guardar($data);
+
+        if ($resultado['ok']) {
+            $target = $formAction === 'update' ? 'updated' : 'created';
+            header('Location: resgistro_clientes.php?status=' . $target);
+            exit;
         }
-        header("Location: resgistro_clientes.php");
-        exit;
+
+        $alertMessage = $resultado['msg'];
+        $alertType = 'error';
+        $formData = $resultado['data'] ?? $data;
+        $editMode = ($formAction === 'update');
     }
 }
 
@@ -88,14 +129,21 @@ $clientes = $controller->index();
         <!-- FORMULARIO -->
         <form class="formulario" action="resgistro_clientes.php" method="POST">
           <input type="hidden" name="form_action" value="<?= $editMode ? 'update' : 'create' ?>">
+
+          <?php if (!empty($alertMessage)): ?>
+            <div class="alert <?= $alertType === 'success' ? 'alert-success' : 'alert-error' ?>">
+              <?= htmlspecialchars($alertMessage) ?>
+            </div>
+          <?php endif; ?>
+
           <div class="campo-grupo">
             <div class="campo">
               <label for="nombre">Nombre:</label>
-              <input type="text" id="nombre" name="nombre" required value="<?= $editMode ? htmlspecialchars($editClient['nombre']) : '' ?>">
+              <input type="text" id="nombre" name="nombre" required value="<?= htmlspecialchars($formData['nombre']) ?>">
             </div>
             <div class="campo">
               <label for="apellido">Apellido:</label>
-              <input type="text" id="apellido" name="apellido" required value="<?= $editMode ? htmlspecialchars($editClient['apellido']) : '' ?>">
+              <input type="text" id="apellido" name="apellido" required value="<?= htmlspecialchars($formData['apellido']) ?>">
             </div>
           </div>
 
@@ -104,38 +152,38 @@ $clientes = $controller->index();
               <label for="tipo_doc">Tipo de documento:</label>
               <select id="tipo_doc" name="tipo_doc" required>
                 <option value="">Seleccione</option>
-                <option value="CC" <?= ($editMode && $editClient['documentCategory']=='CC') ? 'selected' : '' ?>>Cédula</option>
-                <option value="TI" <?= ($editMode && $editClient['documentCategory']=='TI') ? 'selected' : '' ?>>Tarjeta de Identidad</option>
-                <option value="CE" <?= ($editMode && $editClient['documentCategory']=='CE') ? 'selected' : '' ?>>Cédula de Extranjería</option>
+                <option value="CC" <?= ($formData['tipo_doc'] === 'CC') ? 'selected' : '' ?>>Cédula</option>
+                <option value="TI" <?= ($formData['tipo_doc'] === 'TI') ? 'selected' : '' ?>>Tarjeta de Identidad</option>
+                <option value="CE" <?= ($formData['tipo_doc'] === 'CE') ? 'selected' : '' ?>>Cédula de Extranjería</option>
               </select>
             </div>
             <div class="campo">
               <label for="numero_doc">Número de documento:</label>
-              <input type="text" id="numero_doc" name="numero_doc" required value="<?= $editMode ? htmlspecialchars($editClient['documentIdentifier']) : '' ?>" <?= $editMode ? 'readonly' : '' ?>>
+              <input type="text" id="numero_doc" name="numero_doc" required value="<?= htmlspecialchars($formData['numero_doc']) ?>" <?= $editMode ? 'readonly' : '' ?>>
             </div>
           </div>
 
           <div class="campo-grupo">
             <div class="campo">
               <label for="telefono">Teléfono:</label>
-              <input type="text" id="telefono" name="telefono" required value="<?= $editMode ? htmlspecialchars($editClient['phoneNumber']) : '' ?>">
+              <input type="text" id="telefono" name="telefono" required value="<?= htmlspecialchars($formData['telefono']) ?>">
             </div>
             <div class="campo">
               <label for="email">Correo electrónico:</label>
-              <input type="email" id="email" name="email" required value="<?= $editMode ? htmlspecialchars($editClient['emailAddress']) : '' ?>">
+              <input type="email" id="email" name="email" required value="<?= htmlspecialchars($formData['email']) ?>">
             </div>
           </div>
 
           <div class="campo-grupo">
             <div class="campo">
               <label for="direccion">Dirección:</label>
-              <input type="text" id="direccion" name="direccion" required value="<?= $editMode ? htmlspecialchars($editClient['address']) : '' ?>">
+              <input type="text" id="direccion" name="direccion" required value="<?= htmlspecialchars($formData['direccion']) ?>">
             </div>
             <div class="campo">
               <label>Género:</label>
               <div class="radio-group">
-                <label><input type="radio" name="genero" value="M" <?= ($editMode && ($editClient['gender'] ?? '')=='M') ? 'checked' : '' ?>> Masculino</label>
-                <label><input type="radio" name="genero" value="F" <?= ($editMode && ($editClient['gender'] ?? '')=='F') ? 'checked' : '' ?>> Femenino</label>
+                <label><input type="radio" name="genero" value="M" <?= ($formData['genero'] === 'M') ? 'checked' : '' ?>> Masculino</label>
+                <label><input type="radio" name="genero" value="F" <?= ($formData['genero'] === 'F') ? 'checked' : '' ?>> Femenino</label>
               </div>
             </div>
           </div>
@@ -198,112 +246,37 @@ $clientes = $controller->index();
                           <i class="fa-solid fa-file-upload"></i>
                         </button>
                       </form>
-                      <form method="POST" action="ver_documentos.php" style="display:inline;margin-left:10px;">
-                        <input type="hidden" name="doc" value="<?= htmlspecialchars($c['documentIdentifier']) ?>">
-                        <input type="hidden" name="return" value="resgistro_clientes.php">
-                        <button type="submit" title="Ver documentos" style="background:none;border:none;color:#1565c0;cursor:pointer;">
-                          <i class="fa-solid fa-file-lines"></i>
-                        </button>
-                      </form>
                     </td>
                   </tr>
                 <?php endforeach; ?>
               <?php else: ?>
-                <tr><td colspan="5">No hay clientes registrados</td></tr>
+                <tr>
+                  <td colspan="5">No hay clientes registrados</td>
+                </tr>
               <?php endif; ?>
             </tbody>
           </table>
         </div>
-
       </div>
     </main>
   </div>
 
-  <!-- FILTRO Y PAGINACIÓN -->
   <script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const searchInput = document.querySelector(".buscador input");
-    const table = document.querySelector(".listado table");
-    const rows = Array.from(table.querySelectorAll("tbody tr"));
-    const rowsPerPage = 10;
-    let currentPage = 1;
+    document.addEventListener('DOMContentLoaded', function () {
+      const searchInput = document.querySelector('.buscador input');
+      const rows = Array.from(document.querySelectorAll('tbody tr'));
 
-    const paginationContainer = document.createElement("div");
-    paginationContainer.classList.add("paginacion");
-    paginationContainer.style.textAlign = "center";
-    paginationContainer.style.marginTop = "15px";
-    table.parentElement.appendChild(paginationContainer);
-
-    function renderTable() {
-      const searchTerm = searchInput.value.toLowerCase().trim();
-      const filteredRows = rows.filter(row =>
-        row.textContent.toLowerCase().includes(searchTerm)
-      );
-
-      const totalPages = Math.ceil(filteredRows.length / rowsPerPage);
-      currentPage = Math.min(currentPage, totalPages) || 1;
-
-      rows.forEach(row => row.style.display = "none");
-      const start = (currentPage - 1) * rowsPerPage;
-      const end = start + rowsPerPage;
-      filteredRows.slice(start, end).forEach(row => {
-        row.style.display = "";
+      searchInput.addEventListener('input', function () {
+        const term = (this.value || '').toLowerCase().trim();
+        let visible = 0;
+        rows.forEach(row => {
+          const match = row.textContent.toLowerCase().includes(term);
+          row.style.display = match ? '' : 'none';
+          if (match) visible++;
+        });
+        document.querySelector('.listado table').classList.toggle('sin-resultados', visible === 0);
       });
-
-      renderPagination(totalPages);
-    }
-
-    function renderPagination(totalPages) {
-      paginationContainer.innerHTML = "";
-      if (totalPages <= 1) return;
-
-      const prev = document.createElement("button");
-      prev.textContent = "← Anterior";
-      prev.disabled = currentPage === 1;
-      prev.onclick = () => { currentPage--; renderTable(); };
-      paginationContainer.appendChild(prev);
-
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.textContent = i;
-        btn.className = (i === currentPage ? "activo" : "");
-        btn.onclick = () => { currentPage = i; renderTable(); };
-        paginationContainer.appendChild(btn);
-      }
-
-      const next = document.createElement("button");
-      next.textContent = "Siguiente →";
-      next.disabled = currentPage === totalPages;
-      next.onclick = () => { currentPage++; renderTable(); };
-      paginationContainer.appendChild(next);
-    }
-
-    const style = document.createElement("style");
-    style.textContent = `
-      .paginacion button {
-        margin: 0 3px;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 5px;
-        background-color: #f44336;
-        color: white;
-        cursor: pointer;
-        font-weight: 500;
-        transition: background-color 0.3s;
-      }
-      .paginacion button:hover:not(:disabled) { background-color: #d32f2f; }
-      .paginacion button:disabled { background-color: #ccc; cursor: not-allowed; }
-      .paginacion button.activo { background-color: #b71c1c; }
-    `;
-    document.head.appendChild(style);
-
-    searchInput.addEventListener("input", function() {
-      currentPage = 1;
-      renderTable();
     });
-
-    renderTable();
-  });
   </script>
 </body>
 </html>
