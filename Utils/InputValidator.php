@@ -2,61 +2,76 @@
 
 class InputValidator
 {
-    public static function sanitizeText($value, int $maxLength = 255): string
-    {
-        $value = trim((string)($value ?? ''));
-        $value = strip_tags($value);
-        $value = preg_replace('/[\r\n\t]+/u', ' ', $value);
-        $value = preg_replace('/\s{2,}/u', ' ', $value);
-        if ($maxLength > 0) {
-            $value = mb_substr($value, 0, $maxLength);
-        }
-        return $value;
-    }
+    private const DEFAULT_MAX = 255;
 
-    public static function sanitizeAlphaNum($value, int $maxLength = 255): string
+    private static function normalize(?string $value): string
     {
-        $value = self::sanitizeText($value, $maxLength);
-        $value = preg_replace('/[^A-Za-z0-9]/u', '', $value);
-        return $value;
-    }
-
-    public static function sanitizeDigits($value, int $maxLength = 30): string
-    {
-        $value = preg_replace('/\D+/u', '', (string)($value ?? ''));
-        if ($maxLength > 0) {
-            $value = substr($value, 0, $maxLength);
-        }
-        return $value;
-    }
-
-    public static function sanitizeEmail($value): string
-    {
-        $value = trim((string)($value ?? ''));
-        $value = filter_var($value, FILTER_SANITIZE_EMAIL);
-        return $value ?: '';
-    }
-
-    public static function sanitizePassword($value, int $maxLength = 255): string
-    {
-        $value = trim((string)($value ?? ''));
-        $value = preg_replace('/[\x00-\x1F\x7F]+/u', '', $value);
-        if ($maxLength > 0) {
-            $value = substr($value, 0, $maxLength);
-        }
-        return $value;
-    }
-
-    public static function sanitizeFloatString($value, int $maxLength = 30): string
-    {
-        $value = str_replace(',', '.', trim((string)($value ?? '')));
-        if (!is_numeric($value)) {
+        if (!is_string($value)) {
             return '';
         }
-        if ($maxLength > 0) {
-            $value = substr($value, 0, $maxLength);
+
+        $value = trim($value);
+        return preg_replace('/\s+/u', ' ', $value) ?? '';
+    }
+
+    private static function truncate(string $value, int $maxLength): string
+    {
+        $maxLength = $maxLength > 0 ? $maxLength : self::DEFAULT_MAX;
+        return strlen($value) > $maxLength ? substr($value, 0, $maxLength) : $value;
+    }
+
+    public static function sanitizeText(?string $value, int $maxLength): string
+    {
+        $value = strip_tags(self::normalize($value));
+        return self::truncate($value, $maxLength);
+    }
+
+    public static function sanitizeAlphaNum(?string $value, int $maxLength): string
+    {
+        $value = preg_replace('/[^A-Za-z0-9]/', '', self::normalize($value)) ?? '';
+        return self::truncate($value, $maxLength);
+    }
+
+    public static function sanitizeDigits(?string $value, int $maxLength): string
+    {
+        $value = preg_replace('/[^0-9]/', '', self::normalize($value)) ?? '';
+        return self::truncate($value, $maxLength);
+    }
+
+    public static function sanitizeEmail(?string $value): string
+    {
+        $value = strtolower(self::normalize($value));
+        $value = filter_var($value, FILTER_SANITIZE_EMAIL);
+        return $value === false ? '' : $value;
+    }
+
+    public static function sanitizePassword(?string $value, int $maxLength = self::DEFAULT_MAX): string
+    {
+        $value = is_string($value) ? trim($value) : '';
+        return self::truncate($value, $maxLength);
+    }
+
+    public static function sanitizeFloatString(?string $value): string
+    {
+        $value = self::normalize($value);
+        if ($value === '') {
+            return '';
         }
+
+        $value = str_replace(',', '.', $value);
+        $value = preg_replace('/[^0-9\.\-]/', '', $value) ?? '';
+
+        $parts = explode('.', $value);
+        if (count($parts) > 2) {
+            $value = $parts[0] . '.' . implode('', array_slice($parts, 1));
+        }
+
         return $value;
+    }
+
+    public static function ensureNullableText(?string $value, int $maxLength): string
+    {
+        return self::sanitizeText($value, $maxLength);
     }
 
     public static function isValidEmail(string $value): bool
@@ -67,11 +82,5 @@ class InputValidator
     public static function isInArray(string $value, array $allowed): bool
     {
         return in_array($value, $allowed, true);
-    }
-
-    public static function ensureNullableText($value, int $maxLength = 255): string
-    {
-        $value = self::sanitizeText($value, $maxLength);
-        return $value;
     }
 }

@@ -246,6 +246,13 @@ $clientes = $controller->index();
                           <i class="fa-solid fa-file-upload"></i>
                         </button>
                       </form>
+                      <form method="POST" action="ver_documentos.php" style="display:inline;margin-left:10px;">
+                        <input type="hidden" name="doc" value="<?= htmlspecialchars($c['documentIdentifier']) ?>">
+                        <input type="hidden" name="return" value="resgistro_clientes.php">
+                        <button type="submit" title="Ver documentos" style="background:none;border:none;color:#1565c0;cursor:pointer;">
+                          <i class="fa-solid fa-file-lines"></i>
+                        </button>
+                      </form>
                     </td>
                   </tr>
                 <?php endforeach; ?>

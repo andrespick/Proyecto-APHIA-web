@@ -260,6 +260,19 @@ $owners = $controller->propietarios();
                       <i class="fa-solid fa-trash"></i>
                     </button>
                   </form>
+                  <form action="subir_documentos_inmueble.php" method="POST" style="display:inline;margin-left:10px;">
+                    <input type="hidden" name="prop" value="<?= (int)$i['propertyId'] ?>">
+                    <button type="submit" title="Subir documentos" style="background:none;border:none;color:#388e3c;cursor:pointer;">
+                      <i class="fa-solid fa-file-upload"></i>
+                    </button>
+                  </form>
+                  <form method="POST" action="ver_documentos.php" style="display:inline;margin-left:10px;">
+                    <input type="hidden" name="prop" value="<?= (int)$i['propertyId'] ?>">
+                    <input type="hidden" name="return" value="registro_inmuebles.php">
+                    <button type="submit" title="Ver documentos" style="background:none;border:none;color:#1565c0;cursor:pointer;">
+                      <i class="fa-solid fa-file-lines"></i>
+                    </button>
+                  </form>
                 </td>
               </tr>
             <?php endforeach; else: ?>
