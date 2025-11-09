@@ -4,13 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="Styles/style_recoverP.css">
-  <link rel="shortcut icon" href="../img/logo.svg" />
+  <link rel="shortcut icon" href="img/logo.svg" />
   <title>Recuperar Contraseña</title>
 </head>
 <body>
   <div class="container">
     <div class="card">
-      <img src="../img/logo.png" alt="Logo Aphia" class="logo">
+      <img src="img/logo.png" alt="Logo Aphia" class="logo">
       <h1 class="title">Recuperación Contraseña</h1>
 
       <form method="POST" action="ASIGNAR_RUTA_PARA_RECUPERAR_CONTRASEÑA">

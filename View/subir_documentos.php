@@ -5,6 +5,19 @@ $conn = (new Conexion())->conectar();
 $doc = $_GET['doc'] ?? null;
 if (!$doc) die("Documento no especificado.");
 
+$allowedReturns = [
+    'registro_propietarios.php',
+    'registro_codeudor.php',
+    'resgistro_clientes.php'
+];
+$returnParam = $_GET['return'] ?? '';
+$returnPage = basename($returnParam);
+if (!in_array($returnPage, $allowedReturns, true)) {
+    $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH) ?: '';
+    $refererBase = basename($refererPath);
+    $returnPage = in_array($refererBase, $allowedReturns, true) ? $refererBase : 'registro_propietarios.php';
+}
+
 // Obtener personId
 $stmt = $conn->prepare("SELECT personId, fullName FROM person WHERE documentIdentifier = ?");
 $stmt->bind_param("s", $doc);
@@ -42,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo'])) {
 <title>Subir Documentos - <?= htmlspecialchars($person['fullName']) ?></title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="shortcut icon" href="../img/logo.svg" />
+<link rel="shortcut icon" href="img/logo.svg" />
 <style>
 body {
   font-family: 'Poppins', sans-serif;
@@ -190,7 +203,7 @@ a.volver:hover {
 <body>
   <div class="container">
     <h2><i class="fa-solid fa-cloud-arrow-up"></i> Subir Documento</h2>
-    <p><b>Propietario:</b> <?= htmlspecialchars($person['fullName']) ?></p>
+    <p><b>Persona:</b> <?= htmlspecialchars($person['fullName']) ?></p>
 
     <?php if ($msg): ?>
       <div class="msg <?= $msgType ?>">
@@ -199,7 +212,7 @@ a.volver:hover {
       </div>
     <?php endif; ?>
 
-    <form method="POST" enctype="multipart/form-data">
+    <form method="POST" enctype="multipart/form-data" action="subir_documentos.php?doc=<?= urlencode($doc) ?>&return=<?= urlencode($returnPage) ?>">
       <div class="upload-area">
         <i class="fa-solid fa-file-arrow-up"></i>
         <p style="margin:0; color:#666;">Seleccione el archivo que desea subir</p>
@@ -212,7 +225,7 @@ a.volver:hover {
           <i class="fa-solid fa-upload"></i> 
           Subir Archivo
         </button>
-        <a href="registro_propietarios.php" class="volver">
+        <a href="<?= htmlspecialchars($returnPage) ?>" class="volver">
           <i class="fa-solid fa-arrow-left"></i> 
           Volver
         </a>

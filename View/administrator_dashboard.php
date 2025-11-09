@@ -6,7 +6,7 @@
   <title>Panel de Administración - APHIA</title>
   <link rel="stylesheet" href="Styles/style_administrator_dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-  <link rel="shortcut icon" href="../img/logo.svg" />
+  <link rel="shortcut icon" href="img/logo.svg" />
 </head>
 <body>
   <div class="container">
@@ -21,15 +21,15 @@
       <nav class="menu">
         <a href="resgistro_clientes.php"><i class="fas fa-users"></i><span>CLIENTES</span></a>
         <a href="registro_propietarios.php"><i class="fas fa-user-tie"></i><span>PROPIETARIOS</span></a>
-        <a href="#"><i class="fas fa-user-shield"></i><span>CODEUDORES</span></a>
-        <a href="#"><i class="fas fa-building"></i><span>INMUEBLES</span></a>
+        <a href="registro_codeudor.php"><i class="fas fa-user-shield"></i><span>CODEUDORES</span></a>
+        <a href="registro_inmuebles.php"><i class="fas fa-building"></i><span>INMUEBLES</span></a>
         <a href="#"><i class="fas fa-file-contract"></i><span>CONTRATOS</span></a>
       </nav>
     </aside>
 
     <!-- Contenido principal -->
     <main class="main-content">
-      <img src="../img/city.jpg" alt="Ilustración ciudad" class="city-image">
+      <img src="img/city.jpg" alt="Ilustración ciudad" class="city-image">
     </main>
   </div>
 </body>
