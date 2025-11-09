@@ -377,6 +377,7 @@ CREATE TABLE `USER_ACCOUNT` (
     `documentIdentifier` varchar(50) DEFAULT NULL,
     `emailAddress` varchar(255) DEFAULT NULL,
     `hashedPassword` varchar(255) DEFAULT NULL COMMENT 'Hashed password',
+    `state` varchar(20) NOT NULL DEFAULT 'ACTIVE' COMMENT 'ACTIVE or INACTIVE',
     `userCategory` varchar(50) DEFAULT NULL COMMENT 'Administrator, Staff, Advisor',
     PRIMARY KEY (`accountId`)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_general_ci;
@@ -388,6 +389,7 @@ INSERT INTO `USER_ACCOUNT` (
     `documentIdentifier`,
     `emailAddress`,
     `hashedPassword`,
+    `state`,
     `userCategory`
 ) VALUES
     (
@@ -397,6 +399,7 @@ INSERT INTO `USER_ACCOUNT` (
         '98765432',
         'testadmin@example.com',
         'password123',
+        'ACTIVE',
         'System Administrator'
     ),
     (
@@ -406,6 +409,7 @@ INSERT INTO `USER_ACCOUNT` (
         '98765432',
         'testadmin1@example.com',
         'password124',
+        'ACTIVE',
         'administrator'
     ),
     (
@@ -415,6 +419,7 @@ INSERT INTO `USER_ACCOUNT` (
         '98765432',
         'testadmin@example.com',
         'password123',
+        'ACTIVE',
         'Advisor'
     );
 
