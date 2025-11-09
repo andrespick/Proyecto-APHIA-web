@@ -68,8 +68,8 @@ $clientes = $controller->index();
       <nav class="menu">
         <a href="#"><i class="fas fa-users"></i><span>CLIENTES</span></a>
         <a href="registro_propietarios.php"><i class="fas fa-user-tie"></i><span>PROPIETARIOS</span></a>
-        <a href="#"><i class="fas fa-user-shield"></i><span>CODEUDORES</span></a>
-        <a href="#"><i class="fas fa-building"></i><span>INMUEBLES</span></a>
+        <a href="registro_codeudor.php"><i class="fas fa-user-shield"></i><span>CODEUDORES</span></a>
+        <a href="registro_inmuebles.php"><i class="fas fa-building"></i><span>INMUEBLES</span></a>
         <a href="#"><i class="fas fa-file-contract"></i><span>CONTRATOS</span></a>
       </nav>
     </aside>
@@ -181,6 +181,12 @@ $clientes = $controller->index();
                          onclick="return confirm('¿Eliminar este cliente?');" title="Eliminar" style="margin-left:10px;color:#e53935;">
                         <i class="fa-solid fa-trash"></i>
                       </a>
+                      <a href="subir_documentos.php?doc=<?= urlencode($c['documentIdentifier']) ?>&return=resgistro_clientes.php" title="Subir documentos" style="margin-left:10px;color:#388e3c;">
+                        <i class="fa-solid fa-file-upload"></i>
+                      </a>
+                      <a href="ver_documentos.php?doc=<?= urlencode($c['documentIdentifier']) ?>&return=resgistro_clientes.php" title="Ver documentos" style="margin-left:10px;color:#1565c0;">
+                        <i class="fa-solid fa-file-lines"></i>
+                      </a>
                     </td>
                   </tr>
                 <?php endforeach; ?>
@@ -190,6 +196,7 @@ $clientes = $controller->index();
             </tbody>
           </table>
         </div>
+
       </div>
     </main>
   </div>

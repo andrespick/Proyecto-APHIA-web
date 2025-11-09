@@ -2,49 +2,95 @@
 require_once __DIR__ . '/../Model/conexions.php';
 $conn = (new Conexion())->conectar();
 
-$doc = $_GET['doc'] ?? null;
-if (!$doc) die("Documento no especificado.");
+$propertyId = isset($_GET['prop']) ? (int)$_GET['prop'] : 0;
+$docIdentifier = $_GET['doc'] ?? null;
+$isProperty = $propertyId > 0;
 
-// Obtener personId
-$stmt = $conn->prepare("SELECT personId, fullName FROM person WHERE documentIdentifier = ?");
-$stmt->bind_param("s", $doc);
-$stmt->execute();
-$res = $stmt->get_result();
-$person = $res->fetch_assoc();
-if (!$person) die("Propietario no encontrado.");
+if (!$isProperty && !$docIdentifier) {
+    die("Recurso no especificado.");
+}
+
+$allowedReturns = [
+    'registro_propietarios.php',
+    'registro_codeudor.php',
+    'resgistro_clientes.php',
+    'registro_inmuebles.php'
+];
+$defaultReturn = $isProperty ? 'registro_inmuebles.php' : 'registro_propietarios.php';
+$returnParam = $_GET['return'] ?? '';
+$returnPage = basename($returnParam);
+if (!in_array($returnPage, $allowedReturns, true)) {
+    $refererPath = parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_PATH) ?: '';
+    $refererBase = basename($refererPath);
+    $returnPage = in_array($refererBase, $allowedReturns, true) ? $refererBase : $defaultReturn;
+}
 
 $msg = "";
 
-// 🔹 Eliminar documento
-if (isset($_GET['delete']) && !empty($_GET['delete'])) {
-    $filePath = $_GET['delete'];
-    
-    // Eliminar de BD
-    $del = $conn->prepare("DELETE FROM file_record WHERE personId=? AND filePath=?");
-    $del->bind_param("is", $person['personId'], $filePath);
-    $del->execute();
-    
-    // Eliminar archivo físico
-    $rutaAbsoluta = __DIR__ . '/' . ltrim($filePath, './');
-    if (file_exists($rutaAbsoluta)) {
-        unlink($rutaAbsoluta);
+if ($isProperty) {
+    $stmtProp = $conn->prepare(
+        "SELECT p.propertyId, p.address, p.city, o.fullName AS ownerName
+         FROM PROPERTY p
+         LEFT JOIN PERSON o ON o.personId = p.ownerId
+         WHERE p.propertyId=?"
+    );
+    $stmtProp->bind_param("i", $propertyId);
+    $stmtProp->execute();
+    $property = $stmtProp->get_result()->fetch_assoc();
+    if (!$property) {
+        die("Inmueble no encontrado.");
     }
-    
-    $msg = "✅ Archivo eliminado correctamente.";
-}
 
-// Obtener lista
-$stmt = $conn->prepare("SELECT filePath, uploadDate FROM file_record WHERE personId=? ORDER BY uploadDate DESC");
-$stmt->bind_param("i", $person['personId']);
-$stmt->execute();
-$files = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    if (isset($_GET['delete']) && $_GET['delete'] !== '') {
+        $filePath = $_GET['delete'];
+        $del = $conn->prepare("DELETE FROM file_record WHERE propertyId=? AND filePath=?");
+        $del->bind_param("is", $propertyId, $filePath);
+        if ($del->execute()) {
+            $rutaAbsoluta = dirname(__DIR__) . '/' . ltrim(str_replace(['../', './'], '', $filePath), '/');
+            if (file_exists($rutaAbsoluta)) {
+                unlink($rutaAbsoluta);
+            }
+            $msg = "Archivo eliminado correctamente.";
+        }
+    }
+
+    $stmt = $conn->prepare("SELECT filePath, uploadDate FROM file_record WHERE propertyId=? ORDER BY uploadDate DESC");
+    $stmt->bind_param("i", $propertyId);
+    $stmt->execute();
+    $files = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+} else {
+    $stmt = $conn->prepare("SELECT personId, fullName FROM person WHERE documentIdentifier = ?");
+    $stmt->bind_param("s", $docIdentifier);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $person = $res->fetch_assoc();
+    if (!$person) die("Persona no encontrada.");
+
+    if (isset($_GET['delete']) && $_GET['delete'] !== '') {
+        $filePath = $_GET['delete'];
+        $del = $conn->prepare("DELETE FROM file_record WHERE personId=? AND filePath=?");
+        $del->bind_param("is", $person['personId'], $filePath);
+        if ($del->execute()) {
+            $rutaAbsoluta = dirname(__DIR__) . '/' . ltrim(str_replace(['../', './'], '', $filePath), '/');
+            if (file_exists($rutaAbsoluta)) {
+                unlink($rutaAbsoluta);
+            }
+            $msg = "Archivo eliminado correctamente.";
+        }
+    }
+
+    $stmt = $conn->prepare("SELECT filePath, uploadDate FROM file_record WHERE personId=? ORDER BY uploadDate DESC");
+    $stmt->bind_param("i", $person['personId']);
+    $stmt->execute();
+    $files = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Documentos - <?= htmlspecialchars($person['fullName']) ?></title>
+<title>Documentos - <?= $isProperty ? htmlspecialchars($property['address']) : htmlspecialchars($person['fullName']) ?></title>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <style>
@@ -64,6 +110,9 @@ body {
 h2 {
   color: #333;
   margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 p {
   color: #666;
@@ -75,7 +124,7 @@ table {
   margin: 20px 0;
 }
 th {
-  background: #f44336;;
+  background: #f44336;
   color: white;
   padding: 12px;
   text-align: left;
@@ -131,7 +180,14 @@ a.volver:hover {
 <body>
   <div class="container">
     <h2><i class="fa-solid fa-folder-open"></i> Documentos</h2>
-    <p><b>Propietario:</b> <?= htmlspecialchars($person['fullName']) ?></p>
+    <?php if ($isProperty): ?>
+      <p><b>Inmueble:</b> <?= htmlspecialchars($property['address']) ?> (<?= htmlspecialchars($property['city']) ?>)</p>
+      <?php if (!empty($property['ownerName'])): ?>
+        <p><b>Propietario:</b> <?= htmlspecialchars($property['ownerName']) ?></p>
+      <?php endif; ?>
+    <?php else: ?>
+      <p><b>Persona:</b> <?= htmlspecialchars($person['fullName']) ?></p>
+    <?php endif; ?>
 
     <?php if ($msg): ?>
       <div class="msg"><?= htmlspecialchars($msg) ?></div>
@@ -158,9 +214,9 @@ a.volver:hover {
                 <a href="<?= htmlspecialchars($f['filePath']) ?>" download title="Descargar" style="color:#388e3c;">
                   <i class="fa-solid fa-download"></i>
                 </a>
-                <a href="ver_documentos.php?doc=<?= urlencode($doc) ?>&delete=<?= urlencode($f['filePath']) ?>" 
-                   onclick="return confirm('¿Eliminar este archivo?');" 
-                   title="Eliminar" 
+                <a href="ver_documentos.php?<?= $isProperty ? 'prop=' . (int)$propertyId : 'doc=' . urlencode($docIdentifier) ?>&return=<?= urlencode($returnPage) ?>&delete=<?= urlencode($f['filePath']) ?>"
+                   onclick="return confirm('¿Eliminar este archivo?');"
+                   title="Eliminar"
                    style="color:#e53935;">
                   <i class="fa-solid fa-trash"></i>
                 </a>
@@ -176,7 +232,7 @@ a.volver:hover {
       </div>
     <?php endif; ?>
 
-    <a href="registro_propietarios.php" class="volver">
+    <a href="<?= htmlspecialchars($returnPage) ?>" class="volver">
       <i class="fa-solid fa-arrow-left"></i> Volver
     </a>
   </div>
