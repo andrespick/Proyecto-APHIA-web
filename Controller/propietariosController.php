@@ -55,8 +55,21 @@ class PropietarioController {
             return ['ok' => false, 'msg' => 'Documento inválido.'];
         }
 
-        $ok = $this->model->eliminar($documentIdentifier);
-        return $ok ? ['ok' => true] : ['ok' => false, 'msg' => 'No fue posible eliminar el propietario.'];
+        $resultado = $this->model->eliminar($documentIdentifier);
+
+        if ($resultado['ok'] ?? false) {
+            return ['ok' => true];
+        }
+
+        $reason = $resultado['reason'] ?? '';
+        if ($reason === 'has_properties') {
+            return ['ok' => false, 'msg' => 'No es posible eliminar un propietario con inmuebles asociados.'];
+        }
+        if ($reason === 'not_found') {
+            return ['ok' => false, 'msg' => 'No se encontró el propietario solicitado.'];
+        }
+
+        return ['ok' => false, 'msg' => 'No fue posible eliminar el propietario.'];
     }
 
     public function obtenerPorDocumento($documentIdentifier) {

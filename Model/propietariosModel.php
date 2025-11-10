@@ -113,9 +113,22 @@ class PropietarioModel {
             $res = $stmt->get_result();
             if ($res->num_rows === 0) {
                 $this->conn->rollback();
-                return false;
+                return ['ok' => false, 'reason' => 'not_found'];
             }
             $personId = $res->fetch_assoc()['personId'];
+
+            // 1.1) Verificar si tiene inmuebles asociados
+            $stmtPropCount = $this->conn->prepare("SELECT COUNT(*) AS total FROM PROPERTY WHERE ownerId = ?");
+            $stmtPropCount->bind_param("i", $personId);
+            $stmtPropCount->execute();
+            $propResult = $stmtPropCount->get_result();
+            $propRow = $propResult ? $propResult->fetch_assoc() : null;
+            $propCount = $propRow['total'] ?? 0;
+
+            if ($propCount > 0) {
+                $this->conn->rollback();
+                return ['ok' => false, 'reason' => 'has_properties'];
+            }
 
             // 2) Buscar acuerdos asociados
             $stmtA = $this->conn->prepare("SELECT agreementId FROM PROPERTY_AGREEMENT WHERE associatedPersonId = ?");
@@ -156,23 +169,18 @@ class PropietarioModel {
             $stmtBank->bind_param("i", $personId);
             $stmtBank->execute();
 
-            // 6) Eliminar propiedades (puedes cambiar a UPDATE ownerId=NULL si prefieres)
-            $stmtProp = $this->conn->prepare("DELETE FROM PROPERTY WHERE ownerId = ?");
-            $stmtProp->bind_param("i", $personId);
-            $stmtProp->execute();
-
-            // 7) Finalmente eliminar la persona
+            // 6) Finalmente eliminar la persona
             $stmtDelPerson = $this->conn->prepare("DELETE FROM PERSON WHERE personId = ?");
             $stmtDelPerson->bind_param("i", $personId);
             $stmtDelPerson->execute();
 
             $this->conn->commit();
-            return true;
+            return ['ok' => true];
 
         } catch (Exception $e) {
             $this->conn->rollback();
             error_log("Error al eliminar propietario ({$documentIdentifier}): " . $e->getMessage());
-            return false;
+            return ['ok' => false, 'reason' => 'error'];
         }
     }
 
