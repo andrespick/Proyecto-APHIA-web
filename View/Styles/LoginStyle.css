@@ -102,3 +102,14 @@ images1 {
 .forgot-password a:hover {
   text-decoration: underline;
 }
+
+.error-message {
+  background-color: #fdecea;
+  border-radius: 6px;
+  color: #b3261e;
+  font-size: 14px;
+  margin: 15px auto;
+  padding: 10px 12px;
+  text-align: center;
+  width: 90%;
+}
