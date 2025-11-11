@@ -119,12 +119,16 @@ class SystemAdminController {
             $errors[] = 'La categoria seleccionada no es valida.';
         }
 
-        if ($requirePassword && $payload['hashedPassword'] === '') {
+        $plainPassword = $payload['hashedPassword'];
+
+        if ($requirePassword && $plainPassword === '') {
             $errors[] = 'La contraseña es obligatoria.';
         }
 
-        if (!$requirePassword && $payload['hashedPassword'] === '') {
+        if (!$requirePassword && $plainPassword === '') {
             unset($payload['hashedPassword']);
+        } elseif ($plainPassword !== '') {
+            $payload['hashedPassword'] = password_hash($plainPassword, PASSWORD_DEFAULT);
         }
 
         if (!isset($payload['state']) || !in_array($payload['state'], ['ACTIVE', 'INACTIVE'], true)) {
