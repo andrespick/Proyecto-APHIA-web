@@ -33,7 +33,7 @@ if (isset($_GET['error'])) {
 
 <body>
 
-  <!--Caja contenedora login-->
+  <!--Cajas contenedora login-->
   <div class="container">
     <img src="View/img/logo.png" alt="logo" class="logo">
 
